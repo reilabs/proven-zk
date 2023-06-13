@@ -1,5 +1,5 @@
 import Mathlib
-import ProvenZk.Vect
+import ProvenZk.VectorExtensions
 
 inductive Dir : Type
 | left : Dir
@@ -39,16 +39,16 @@ def root {depth : Nat} {F: Type} {H: Hash F} (t : MerkleTree F H depth) : F  := 
 | leaf f => f
 | bin l r => H.hash (root l) (root r)
 
-def item_at {depth : Nat} {F: Type} {H: Hash F} (t : MerkleTree F H depth) (p : Vect Dir depth) : F := match depth with
-  | Nat.zero => match t with 
+def item_at {depth : Nat} {F: Type} {H: Hash F} (t : MerkleTree F H depth) (p : Vector Dir depth) : F := match depth with
+  | Nat.zero => match t with
     | leaf f => f
   | Nat.succ _ => (t.tree_for p.head).item_at p.tail
 
-def proof {depth : Nat} {F: Type} {H: Hash F} (t : MerkleTree F H depth) (p : Vect Dir depth) : Vect F depth := match depth with
-  | Nat.zero => Vect.nil
-  | Nat.succ _ => Vect.cons (t.tree_for p.head.swap).root ((t.tree_for p.head).proof p.tail)
+def proof {depth : Nat} {F: Type} {H: Hash F} (t : MerkleTree F H depth) (p : Vector Dir depth) : Vector F depth := match depth with
+  | Nat.zero => Vector.nil
+  | Nat.succ _ => Vector.cons (t.tree_for p.head.swap).root ((t.tree_for p.head).proof p.tail)
 
-def recover {depth : Nat} {F: Type} (H : Hash F) (ix : Vect Dir depth) (proof : Vect F depth) (item : F) : F := match depth with
+def recover {depth : Nat} {F: Type} (H : Hash F) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
   | Nat.zero => item
   | Nat.succ _ =>
     let pitem := proof.head
@@ -57,55 +57,54 @@ def recover {depth : Nat} {F: Type} (H : Hash F) (ix : Vect Dir depth) (proof : 
       | Dir.left => H.hash (recover H ix.tail proof' item) pitem
       | Dir.right => H.hash pitem (recover H ix.tail proof' item)
 
-def recover_rev {depth F} (H: Hash F) (ix : Vect Dir depth) (proof : Vect F depth) (item : F) : F := match depth with
+def recover_tail {depth F} (H: Hash F) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
   | Nat.zero => item
   | Nat.succ _ =>
     let next := match ix.head with
-      | Dir.left => H.hash item proof.head 
+      | Dir.left => H.hash item proof.head
       | Dir.right => H.hash proof.head item
-    recover_rev H ix.tail proof.tail next
+    recover_tail H ix.tail proof.tail next
 
-lemma recover_rev_snoc 
-  {depth F} 
+lemma recover_tail_snoc
+  {depth F}
   (H: Hash F)
-  (ix : Vect Dir depth)
+  (ix : Vector Dir depth)
   (dir : Dir)
-  (proof : Vect F depth)
+  (proof : Vector F depth)
   (pitem : F)
   (item : F):
-  recover_rev H (ix.snoc dir) (proof.snoc pitem) item = match dir with
-    | Dir.left => H.hash (recover_rev H ix proof item) pitem
-    | Dir.right => H.hash pitem (recover_rev H ix proof item) := by
+  recover_tail H (ix.snoc dir) (proof.snoc pitem) item = match dir with
+    | Dir.left => H.hash (recover_tail H ix proof item) pitem
+    | Dir.right => H.hash pitem (recover_tail H ix proof item) := by
   induction depth generalizing dir pitem item with
-  | zero =>
-    cases ix; cases proof;
-    rfl
+  | zero => simp [Vector.eq_nil, recover_tail]
   | succ _ ih =>
-    conv => 
-      lhs
-      rw [recover_rev, Vect.head_of_snoc, Vect.head_of_snoc, Vect.tail_of_snoc, Vect.tail_of_snoc, ih]
+      conv =>
+        lhs
+        rw [recover_tail, Vector.head_snoc, Vector.head_snoc, Vector.tail_snoc, Vector.tail_snoc, ih]
 
-theorem recover_rev_sound
+theorem recover_tail_reverse
   {F depth}
   (H : Hash F)
-  (ix : Vect Dir depth)
-  (proof : Vect F depth)
+  (ix : Vector Dir depth)
+  (proof : Vector F depth)
   (item : F) :
-  recover_rev H ix.reverse proof.reverse item = recover H ix proof item := by
+  recover_tail H ix.reverse proof.reverse item = recover H ix proof item := by
   induction depth with
   | zero => rfl
   | succ _ ih =>
-    cases ix; rename_i dir ix;
-    cases proof; rename_i pitem proof;
-    cases dir <;> {
-      simp [recover, Vect.reverse]
-      rw [recover_rev_snoc, ih]
-    }
+    rw [←ix.cons_head_tail,
+        ←proof.cons_head_tail,
+        Vector.reverse_cons_snoc,
+        Vector.reverse_cons_snoc,
+        recover_tail_snoc]
+    unfold recover
+    split <;> simp [*]
 
 theorem recover_proof_is_root
   {F depth}
   (H : Hash F)
-  (ix : Vect Dir depth)
+  (ix : Vector Dir depth)
   (tree : MerkleTree F H depth):
   recover H ix (tree.proof ix) (tree.item_at ix) = tree.root := by
   induction depth with
@@ -113,20 +112,20 @@ theorem recover_proof_is_root
     cases tree
     simp [recover, proof, item_at, root]
   | succ _ ih =>
-    cases ix; rename_i dir ix;
-    cases tree; rename_i l r;
-    cases dir <;> {
-      simp [recover, Vect.head, proof, Vect.tail, tree_for, Dir.swap, right, left, root, item_at]
-      rw [ih]
-    }
+    cases tree; rename_i l r
+    simp [recover]
+    split <;> (
+      unfold root
+      congr <;> simp [*, proof, tree_for, left, right, Dir.swap, item_at, ih]
+    )
 
-def set { depth : Nat } {F: Type} {H : Hash F} (tree : MerkleTree F H depth) (ix : Vect Dir depth) (item : F) : MerkleTree F H depth := match depth with
+def set { depth : Nat } {F: Type} {H : Hash F} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (item : F) : MerkleTree F H depth := match depth with
   | Nat.zero => leaf item
   | Nat.succ _ => match ix.head with
     | Dir.left => bin (set tree.left ix.tail item) tree.right
     | Dir.right => bin tree.left (set tree.right ix.tail item)
 
-theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F} (tree : MerkleTree F H depth) (ix : Vect Dir depth) (new : F) :
+theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (new : F) :
   (tree.set ix new).item_at ix = new := by
   induction depth with
   | zero => rfl
@@ -135,7 +134,7 @@ theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F} (tree : Merk
     simp [set]
     split <;> simp [item_at, tree_for, left, right, *]
 
-theorem proof_ceritfies_item {depth : Nat} {F: Type} {H: Hash F} (ix : Vect Dir depth) (tree : MerkleTree F H depth) (proof : Vect F depth) (item : F) :
+theorem proof_ceritfies_item {depth : Nat} {F: Type} {H: Hash F} (ix : Vector Dir depth) (tree : MerkleTree F H depth) (proof : Vector F depth) (item : F) :
   recover H ix proof item = tree.root → tree.item_at ix = item := by
   intro h
   induction depth with
@@ -154,7 +153,7 @@ theorem proof_ceritfies_item {depth : Nat} {F: Type} {H: Hash F} (ix : Vect Dir 
       assumption
     }
 
-theorem proof_insert_invariant {depth : Nat} {F: Type} {H: Hash F} (ix : Vect Dir depth) (tree : MerkleTree F H depth) (old new : F) (proof : Vect F depth) :
+theorem proof_insert_invariant {depth : Nat} {F: Type} {H: Hash F} (ix : Vector Dir depth) (tree : MerkleTree F H depth) (old new : F) (proof : Vector F depth) :
   recover H ix proof old = tree.root → recover H ix proof new = (tree.set ix new).root := by
   intro h
   induction depth with

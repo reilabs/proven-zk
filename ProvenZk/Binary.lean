@@ -83,12 +83,12 @@ theorem binary_nat_lt {d} (rep : Vector Bit d): recover_binary_nat rep < 2 ^ d :
       simp_arith at h
       rw [Nat.pow_succ]
     )
-    . apply @Nat.le.intro _ _ (w + w + 1) 
+    . apply @Nat.le.intro _ _ (w + w + 1)
       linarith
     . apply @Nat.le.intro _ _ (w + w)
       linarith
 
-theorem binary_nat_zmod_equiv {n d} (rep : Vector Bit d): 
+theorem binary_nat_zmod_equiv {n d} (rep : Vector Bit d):
   (recover_binary_nat rep : ZMod n) = (recover_binary_zmod rep) := by
   induction d with
   | zero => simp [recover_binary_nat, recover_binary_zmod]
@@ -96,13 +96,13 @@ theorem binary_nat_zmod_equiv {n d} (rep : Vector Bit d):
     -- cases rep; rename_i rh rt
     simp [recover_binary_nat, recover_binary_zmod]
     cases rep.head <;> simp [Bit.toNat, Bit.toZMod, *]
-  
+
 theorem binary_nat_zmod_equiv_mod_p {n d} (rep : Vector Bit d):
   (recover_binary_zmod rep : ZMod n).val = recover_binary_nat rep % n := by
   rw [←binary_nat_zmod_equiv]
   apply ZMod.val_nat_cast
 
-theorem binary_zmod_same_as_nat {n d} (rep : Vector Bit d): 
+theorem binary_zmod_same_as_nat {n d} (rep : Vector Bit d):
   2 ^ d < n ->
   (recover_binary_zmod rep : ZMod n).val = recover_binary_nat rep := by
   intro d_small
