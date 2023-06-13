@@ -1,4 +1,4 @@
-import Mathlib
+import Mathlib.Data.ZMod.Basic
 
 inductive Bit : Type where
   | zero : Bit

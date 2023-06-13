@@ -1,4 +1,3 @@
-import Mathlib
 import ProvenZk.VectorExtensions
 
 inductive Dir : Type
