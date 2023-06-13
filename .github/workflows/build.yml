@@ -1,0 +1,21 @@
+name: Build
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Install Elan
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y -v --default-toolchain leanprover/lean4:nightly
+          echo "LAKE_VERSION=$(~/.elan/bin/lake --version)" >> $GITHUB_ENV
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: lake-packages
+          key: "${{ env.LAKE_VERSION }}"
+      - name: Build project
+        run: ~/.elan/bin/lake build
