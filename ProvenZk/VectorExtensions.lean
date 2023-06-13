@@ -44,4 +44,7 @@ macro_rules
   | `(vec![$x]) => `(cons $x nil)
   | `(vec![$x, $xs:term,*]) => `(cons $x (vec![$xs,*]))
 
+instance : GetElem (Vector a l) (Nat) a (fun _ i => i < l) where
+  getElem xs i h := xs.get ⟨i, h⟩
+
 end Vector
