@@ -33,5 +33,5 @@ def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
 def le (a b : ZMod N): Prop := ZMod.val a <= ZMod.val b
 def to_binary (a : ZMod N) (n : Nat): Vector Bit n := list_to_vec_n (recover_binary_list a) n
-def from_binary {N d} (a : Vector Bit d): ZMod N := recover_binary_zmod a
+def from_binary (a : Vector Bit d): ZMod N := recover_binary_zmod a
 end Gates
