@@ -97,6 +97,7 @@ def circuit_3 (Root: F) (Element: F) (Path: Vector Bool 3) (Proof: Vector F 3): 
     Gates.eq gate_8 Root ∧
     True
 
+-- Operations in each iteration of for loop
 def circuit_bit_cps (Element: F) (PathItem: Bool) (ProofItem: F) (k : F -> Prop): Prop :=
     hash Element ProofItem fun gate_0 =>
     hash ProofItem Element fun gate_1 =>
@@ -105,10 +106,6 @@ def circuit_bit_cps (Element: F) (PathItem: Bool) (ProofItem: F) (k : F -> Prop)
 
 def circuit_bit_indexed_cps (Element: F) (Path: Vector Bool depth) (Proof: Vector F depth) (index : Nat) (index_small : index < depth) (k : F -> Prop): Prop :=
     circuit_bit_cps Element Path[index] Proof[index] k
-    -- hash Element Proof[index] fun gate_0 =>
-    -- hash Proof[index] Element fun gate_1 =>
-    -- ∃gate_2, Gates.sel Path[index] gate_1 gate_0 gate_2 ∧
-    -- k gate_2
 
 -- def circuit_recursive_go (Element: F) (Root: F) (Path: Vector Bool depth) (Proof: Vector F depth) (index : Nat) (index_small: index ≤ depth) (k : F -> Prop): Prop :=
 --     if h : index < depth
@@ -122,7 +119,12 @@ def circuit_recursive (Element: F) (Root: F) (Path: Vector Bool depth) (Proof: V
         circuit_bit_indexed_cps Element Path Proof (depth - items_left) (by sorry) (fun gate => go items_left' gate k)
 
 theorem cps_congr (F : (A -> Prop) -> Prop) (K1 K2: A -> Prop): (∀X,(K1 X ↔ K2 X)) -> (F K1 ↔ F K2) := by
-    sorry
+    intro h
+    apply Iff.intro
+    . intro h1
+      sorry 
+    . intro h1
+      sorry
 
 theorem strong_exists_equiv (P1 P2: A -> Prop): (∀ X, P1 X ↔ P2 X) -> ((∃ X, P1 X) ↔ (∃ X, P2 X)) := by
   intro h
@@ -140,9 +142,9 @@ theorem strong_exists_equiv (P1 P2: A -> Prop): (∀ X, P1 X ↔ P2 X) -> ((∃ 
 
 theorem and_equiv (A B C: Prop): (A ↔ B) -> (C ∧ A ↔ C ∧ B) := by tauto
 
-lemma circuit_loopable (Element: F) (Root: F) (Path: Vector Bool 20) (Proof: Vector F 20):
-    circuit_recursive Element Root Path Proof ↔ circuit Root Element Path Proof := by
-    unfold circuit
+lemma circuit_loopable (Element: F) (Root: F) (Path: Vector Bool 3) (Proof: Vector F 3):
+    circuit_recursive Element Root Path Proof ↔ circuit_3 Root Element Path Proof := by
+    unfold circuit_3
     unfold circuit_recursive
     repeat (
       unfold circuit_recursive.go
@@ -156,29 +158,6 @@ lemma circuit_loopable (Element: F) (Root: F) (Path: Vector Bool 20) (Proof: Vec
     unfold circuit_recursive.go
     simp
 
-
-    -- simp (config := {singlePass := true})
-    -- -- simp_arith
-    -- apply cps_congr; intro
-    -- apply cps_congr; intro
-    -- unfold circuit_recursive.go
-    -- unfold circuit_bit_indexed_cps
-    -- unfold circuit_bit_cps
-    -- simp_arith
-    -- apply cps_congr; intro
-    -- simp (config := {singlePass := true})
-    -- intro
-    -- simp (config := {singlePass := true})
-    -- apply cps_congr; intro
-    -- apply cps_congr; intro
-
-
-
-
-
-
-
-
 def merkle_recover {depth F} (hash: F->F->F) (path: Vector Bool depth) (proof: Vector F depth) (item: F) : F :=
   match depth with
   | Nat.zero => item
@@ -188,5 +167,7 @@ def merkle_recover {depth F} (hash: F->F->F) (path: Vector Bool depth) (proof: V
       | Bool.true => hash proof.head item
       merkle_recover hash path.tail proof.tail head
 
-theorem circuit_program_equiv (path : Vector Bool 20) (proof : Vector F 20) (item result: F):
-  circuit result item path proof <-> merkle_recover some_hash path proof item = result := by sorry
+theorem circuit_program_equiv (path : Vector Bool 3) (proof : Vector F 3) (item result: F):
+  circuit_3 result item path proof <-> merkle_recover some_hash path proof item = result := by
+  rw [<-circuit_loopable]
+  sorry
