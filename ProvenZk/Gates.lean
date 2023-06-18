@@ -1,6 +1,8 @@
 import Mathlib
 import Mathlib.Data.ZMod.Basic
 
+import ProvenZk.Binary
+
 namespace Gates
 variable {N : Nat}
 variable [Fact (Nat.Prime N)]
@@ -16,8 +18,7 @@ def inv (a out : ZMod N): Prop := a ≠ 0 ∧ out = 1 / a
 def xor (a b out : ZMod N): Prop := is_bool a ∧ is_bool b ∧ out = a*(1-2*b)+b
 def or (a b out : ZMod N): Prop := is_bool a ∧ is_bool b ∧ out = a+b-a*b
 def and (a b out : ZMod N): Prop := is_bool a ∧ is_bool b ∧ out = a*b
---def sel (b i1 i2 out : ZMod N): Prop := is_bool b ∧ ((b = 1 ∧ out = i1) ∨ (b = 0 ∧ out = i2)) -- out = i2 - b*(i2-i1)
-def sel (b : Bool) (i1 i2 out : ZMod N): Prop := ((b ∧ out = i1) ∨ (¬b ∧ out = i2)) -- out = i2 - b*(i2-i1)
+def sel (b : Bool) (i1 i2 out : ZMod N): Prop := ((b ∧ out = i1) ∨ (¬b ∧ out = i2))
 def lup (b0 b1 i0 i1 i2 i3 out : ZMod N): Prop := is_bool b0 ∧ is_bool b1 ∧ (
   (b0 = 0 ∧ b1 = 0 ∧ out = i0) ∨
   (b0 = 1 ∧ b1 = 0 ∧ out = i1) ∨
@@ -31,4 +32,6 @@ def iz (a out: ZMod N): Prop := (a = 0 ∧ out = 1) ∨ (a != 0 ∧ out = 0)
 def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
 def le (a b : ZMod N): Prop := ZMod.val a <= ZMod.val b
+def to_binary (a : ZMod N) (n : Nat): Vector Bit n := list_to_vec_n (recover_binary_list a) n
+def from_binary {N d} (a : Vector Bit d): ZMod N := recover_binary_zmod a
 end Gates
