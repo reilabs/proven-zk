@@ -25,7 +25,26 @@ instance : OfNat Bit 0 where
 instance : OfNat Bit 1 where
   ofNat := one
 
+instance : Inhabited Bit where
+  default := zero
+
 end Bit
+
+def nat_to_zmod (inp : Nat) (n : Nat) : ZMod n :=
+  (inp:ZMod n)
+
+def mod_two (inp : Nat) : Bit := match (inp%2) with
+ | 0 => Bit.zero
+ | 1 => Bit.one
+ | _ => Bit.zero -- Unreachable
+
+def list_to_vec_n (L : List Bit) (n : Nat) : Vector Bit n := ⟨List.takeI n L, List.takeI_length n L⟩
+
+def recover_binary_list {n} (inp : ZMod n) : List Bit := match (ZMod.val inp) with
+  | 0 => [Bit.zero]
+  | Nat.succ x => recover_binary_list (nat_to_zmod (x/2) n) ++ [mod_two x]
+  termination_by recover_binary_list inp => inp
+  decreasing_by sorry
 
 def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
   | 0 => 0
