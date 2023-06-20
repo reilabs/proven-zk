@@ -31,20 +31,6 @@ instance : Inhabited Bit where
 
 end Bit
 
-def mod_two (inp : Nat) : Bit := match (inp%2) with
- | 0 => Bit.zero
- | 1 => Bit.one
- | _ => Bit.zero -- Unreachable
-
-def list_to_vec_n (L : List Bit) (n : Nat) : Vector Bit n := ⟨List.takeI n L, List.takeI_length n L⟩
-
-def recover_binary_list : Nat → List Bit
-  | 0 => [Bit.zero]
-  | 1 => [Bit.one]
-  | x+2 => have : Nat.succ (x / 2) < Nat.succ (Nat.succ x) := sorry
-  (recover_binary_list ((x+2)/2)) ++ [mod_two x]
-termination_by recover_binary_list x => x
-
 def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toNat + 2 * recover_binary_nat rep.tail
