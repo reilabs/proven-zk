@@ -3,6 +3,7 @@ import Mathlib.Data.ZMod.Basic
 inductive Bit : Type where
   | zero : Bit
   | one : Bit
+  deriving Repr, BEq
 
 namespace Bit
 def toNat : Bit -> Nat := fun b => match b with
@@ -30,9 +31,6 @@ instance : Inhabited Bit where
 
 end Bit
 
-def nat_to_zmod (inp : Nat) (n : Nat) : ZMod n :=
-  (inp:ZMod n)
-
 def mod_two (inp : Nat) : Bit := match (inp%2) with
  | 0 => Bit.zero
  | 1 => Bit.one
@@ -40,11 +38,12 @@ def mod_two (inp : Nat) : Bit := match (inp%2) with
 
 def list_to_vec_n (L : List Bit) (n : Nat) : Vector Bit n := ⟨List.takeI n L, List.takeI_length n L⟩
 
-def recover_binary_list {n} (inp : ZMod n) : List Bit := match (ZMod.val inp) with
+def recover_binary_list : Nat → List Bit
   | 0 => [Bit.zero]
-  | Nat.succ x => recover_binary_list (nat_to_zmod (x/2) n) ++ [mod_two x]
-  termination_by recover_binary_list inp => inp
-  decreasing_by sorry
+  | 1 => [Bit.one]
+  | x+2 => have : Nat.succ (x / 2) < Nat.succ (Nat.succ x) := sorry
+  (recover_binary_list ((x+2)/2)) ++ [mod_two x]
+termination_by recover_binary_list x => x
 
 def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
   | 0 => 0
