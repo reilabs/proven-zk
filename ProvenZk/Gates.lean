@@ -32,6 +32,6 @@ def is_zero (a out: ZMod N): Prop := (a = 0 ∧ out = 1) ∨ (a != 0 ∧ out = 0
 def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
 def le (a b : ZMod N): Prop := ZMod.val a <= ZMod.val b
-def to_binary (a : ZMod N) (n : Nat): Vector Bit n := list_to_vec_n (recover_binary_list (ZMod.val a)) n
+def to_binary (a : ZMod N) (n : Nat): Vector Bit n := list_to_vec_n (List.reverse (recover_binary_list (ZMod.val a))) n
 def from_binary (p : Nat) (a : Vector Bit d) : ZMod p := recover_binary_zmod a
 end Gates
