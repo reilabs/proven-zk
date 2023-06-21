@@ -26,12 +26,12 @@ def lookup (b0 b1 i0 i1 i2 i3 out : ZMod N): Prop := is_bool b0 ∧ is_bool b1 �
   (b0 = 1 ∧ b1 = 1 ∧ out = i3)
 )
 def cmp (a b : ZMod N) (out : ZMod N): Prop := (a = b ∧ out = 0) ∨
-(ZMod.val a < ZMod.val b ∧ out = -1) ∨
-( ZMod.val a > ZMod.val b ∧ out = 1)
+  (ZMod.val a < ZMod.val b ∧ out = -1) ∨
+  (ZMod.val a > ZMod.val b ∧ out = 1)
 def is_zero (a out: ZMod N): Prop := (a = 0 ∧ out = 1) ∨ (a != 0 ∧ out = 0)
 def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
 def le (a b : ZMod N): Prop := ZMod.val a <= ZMod.val b
-def to_binary (a : ZMod N) (n : Nat) (out : Vector Bit n): Prop := recover_binary_zmod out = a
-def from_binary (p : Nat) (a : Vector Bit d) : ZMod p := recover_binary_zmod a
+def to_binary (a : ZMod N) (n : Nat) (out : Vector (ZMod N) n): Prop := (recover_binary_zmod (Vector.map nat_to_bit out)) = a
+def from_binary {d} (a : Vector (ZMod N) d) (out : ZMod N): Prop := (List.foldr (fun a r => is_bool a ∧ r) true (Vector.toList a)) ∧ out = (recover_binary_zmod (Vector.map nat_to_bit a))
 end Gates

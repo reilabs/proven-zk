@@ -31,6 +31,11 @@ instance : Inhabited Bit where
 
 end Bit
 
+def nat_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
+  | 0 => Bit.zero
+  | 1 => Bit.one
+  | Nat.succ (Nat.succ _) => sorry
+
 def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toNat + 2 * recover_binary_nat rep.tail
