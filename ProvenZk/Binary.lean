@@ -1,4 +1,5 @@
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Data.Bitvec.Core
 
 inductive Bit : Type where
   | zero : Bit
@@ -54,33 +55,20 @@ def nat_to_bit_with_condition (x : Nat) {cond : x = 0 ∨ x = 1} : Bit := match 
       exact h
   )
 
--- def zmod_to_bit {n} (x : ZMod n) (x_bin : x = 0 ∨ x = 1) : Bit := match p : ZMod.val x with
---   | 0 => Bit.zero
---   | 1 => Bit.one
---   | Nat.succ (Nat.succ _) => False.elim (by
---     cases x_bin with
---     | inl =>
---       rename_i h
---       rename_i input
---       intro h
---       apply double_succ_ne_zero input
---       exact h
---     | inr =>
---       rename_i h
---       rename_i input
---       apply double_succ_ne_one input
---       exact h
---   )
-
 def nat_to_bit (x : Nat) : Bit := match x with
   | 0 => Bit.zero
   | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => sorry
+  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
 
 def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
   | 0 => Bit.zero
   | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => sorry
+  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
+
+def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
+
+def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
+  (List.foldr (fun a r => is_bit a ∧ r) true (Vector.toList x))
 
 def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
   Vector.map nat_to_bit (Vector.map ZMod.val a)
@@ -89,11 +77,17 @@ def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toNat + 2 * recover_binary_nat rep.tail
 
-def recover_binary_zmod {n d} (rep : Vector Bit d) : ZMod n := match d with
+def recover_binary_zmod {d n} (rep : Vector Bit d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toZMod + 2 * recover_binary_zmod rep.tail
 
 def is_binary_of {n d} (inp : ZMod n) (rep : Vector Bit d): Prop := inp = recover_binary_zmod rep
+
+def nat_n_bits (a : Nat) (digits : Nat) : Nat :=
+  Bitvec.bitsToNat (List.reverse (List.take digits (List.reverse (Nat.bits a))))
+
+def zmod_n_bits{n} (a : ZMod n) (b : Nat) : ZMod n :=
+  Bitvec.bitsToNat (List.reverse (List.take b (List.reverse (Nat.bits (ZMod.val a)))))
 
 lemma even_ne_odd (a b : Nat): 2 * a ≠ 2 * b + 1 := by
   intro h
