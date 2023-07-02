@@ -60,10 +60,20 @@ def nat_to_bit (x : Nat) : Bit := match x with
   | 1 => Bit.one
   | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
 
+def nat_to_bit' (x : Nat) : Option Bit := match x with
+  | 0 => Option.some Bit.zero
+  | 1 => Option.some Bit.one
+  | Nat.succ (Nat.succ _) => Option.none
+
 def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
   | 0 => Bit.zero
   | 1 => Bit.one
   | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
+
+def zmod_to_bit' {n} (x : ZMod n) : Option Bit := match ZMod.val x with
+  | 0 => Option.some Bit.zero
+  | 1 => Option.some Bit.one
+  | Nat.succ (Nat.succ _) => Option.none
 
 def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
 
