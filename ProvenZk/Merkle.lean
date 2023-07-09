@@ -10,10 +10,14 @@ def swap : Dir -> Dir
 | left => right
 | right => left
 
+instance : Inhabited Dir where
+  default := left
+
 end Dir
 
 structure Hash (F: Type) :=
   hash : F -> F -> F
+  hash₁ : F -> F
   perfect_hash : (a : F) -> (b : F) -> (c : F) -> (d : F) -> (hash a b = hash c d) -> (a = c) ∧ (b = d)
 
 inductive MerkleTree (F: Type) (H : Hash F) : Nat -> Type
