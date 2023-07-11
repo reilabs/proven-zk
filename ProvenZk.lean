@@ -15,6 +15,14 @@ def DummyPoseidon1 (In: F) (k: F -> Prop): Prop :=
     ∃gate_0, gate_0 = Gates.mul In In ∧
     k gate_0
 
+-- DummyPoseidon1 = In*In
+
+-- def proof (In : F) : Prop :=
+--     In
+
+-- theorem dummy_poseidon_sound (In: F) : Prop :=
+--     DummyPoseidon1 In proof
+
 def DummyPoseidon2 (In_1: F) (In_2: F) (k: F -> Prop): Prop :=
     ∃gate_0, gate_0 = Gates.mul In_1 In_2 ∧
     k gate_0
