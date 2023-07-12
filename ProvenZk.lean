@@ -70,6 +70,22 @@ lemma circuit_simplified (IdentityNullifier IdentityTrapdoor SignalHash ExtNulli
     circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
     circuit_simpl dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root Path Proof := by sorry
 
+theorem always_possible_to_signal
+    (IdentityNullifier IdentitityTrapdoor SignalHash ExtNullifier : F)
+    (Tree : MerkleTree F dummy_hash₂ 3)
+    (Path : Vector F 3)
+    (comm_in_tree : Tree.item_at (create_dir_vec Path) = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentitityTrapdoor)
+    :
+    circuit
+        IdentityNullifier
+        IdentitityTrapdoor
+        Path
+        (Tree.proof (create_dir_vec Path))
+        SignalHash
+        ExtNullifier
+        (nullifier_hash dummy_hash₂ ExtNullifier IdentityNullifier)
+        Tree.root := by sorry
+
 theorem signaller_is_in_tree
     (IdentityNullifier IdentitityTrapdoor SignalHash ExtNullifier NullifierHash : F)
     (Tree : MerkleTree F dummy_hash₂ 3)
