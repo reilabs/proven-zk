@@ -38,6 +38,18 @@ theorem reverse_cons_snoc {T n} (v: Vector T n) (x: T): reverse (cons x v) = sno
   apply Vector.eq
   simp [toList_snoc, toList_reverse]
 
+@[simp]
+def element_wise_eq {T n} (v1 v2: Vector T n): Prop := match n with
+  | Nat.zero => True
+  | Nat.succ _ => v1.head = v2.head ∧ element_wise_eq v1.tail v2.tail
+
+theorem elems_eq {T n} {v1 v2: Vector T n}: v1 = v2 -> element_wise_eq v1 v2 := by
+  induction n with
+  | zero => simp
+  | succ =>
+    intro h
+    simp [element_wise_eq, *]
+
 syntax (priority := high) "vec![" term,* "]" : term
 macro_rules
   | `(vec![]) => `(nil)

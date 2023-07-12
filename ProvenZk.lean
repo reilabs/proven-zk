@@ -2,6 +2,7 @@ import Mathlib
 
 import ProvenZk.Binary
 import ProvenZk.Gates
+import ProvenZk.Hash
 import ProvenZk.Merkle
 import ProvenZk.VectorExtensions
 
@@ -14,14 +15,6 @@ set_option maxHeartbeats 0
 def DummyPoseidon1 (In: F) (k: F -> Prop): Prop :=
     ∃gate_0, gate_0 = Gates.mul In In ∧
     k gate_0
-
--- DummyPoseidon1 = In*In
-
--- def proof (In : F) : Prop :=
---     In
-
--- theorem dummy_poseidon_sound (In: F) : Prop :=
---     DummyPoseidon1 In proof
 
 def DummyPoseidon2 (In_1: F) (In_2: F) (k: F -> Prop): Prop :=
     ∃gate_0, gate_0 = Gates.mul In_1 In_2 ∧
@@ -59,26 +52,40 @@ def nat_to_dir : Nat -> Dir
 
 def create_dir_vec {depth} (ix: Vector F depth) : Vector Dir depth :=
     Vector.map nat_to_dir (Vector.map ZMod.val ix)
-    
-def generate_item {F: Type} (H: Hash F) (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
-    H.hash₁ (H.hash IdentityNullifier IdentityTrapdoor)
 
-def generate_nullifier {F: Type} (H: Hash F) (IdentityNullifier: F) (ExternalNullifier: F) : F :=
-    H.hash IdentityNullifier ExternalNullifier
+def identity_commitment {F: Type} (H₁: Hash F 1) (H₂: Hash F 2) (IdentityNullifier: F) (IdentityTrapdoor: F) : F :=
+    H₁ vec![H₂ vec![IdentityNullifier, IdentityTrapdoor]]
 
-axiom fake_anti_collision {a b c d : F} : a * b = c * d → a = c ∧ b = d
+def nullifier_hash {F: Type} (H₂: Hash F 2) (IdentityNullifier: F) (ExternalNullifier: F) : F :=
+    H₂ vec![ExternalNullifier, IdentityNullifier]
 
-def dummy_hash : Hash F := Hash.mk (fun a b => a * b) (fun a => a * a) (by
-    simp
-    apply fake_anti_collision
-)
+def dummy_hash₁ : Hash F 1 := fun a => a[0] * a[0]
+def dummy_hash₂ : Hash F 2 := fun a => a[0] * a[1]
 
-theorem member_in_tree (IdentityNullifier: F) (IdentityTrapdoor: F) (TreePathIndices: Vector F 3) (TreeSiblings: Vector F 3) (SignalHash: F) (ExternalNullifier: F) (NullifierHash: F) (MTRoot: F) :
-    circuit IdentityNullifier IdentityTrapdoor TreePathIndices TreeSiblings SignalHash ExternalNullifier NullifierHash MTRoot → 
-    MerkleTree.recover dummy_hash (create_dir_vec TreePathIndices) TreeSiblings (generate_item dummy_hash IdentityNullifier IdentityTrapdoor) = MTRoot := by
-    sorry
+def circuit_simpl (H₁: Hash F 1) (H₂: Hash F 2) (IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F 3): Prop :=
+    NullifierHash = nullifier_hash H₂ ExternalNullifier IdentityNullifier ∧
+    MerkleTree.recover H₂ (create_dir_vec Path) Proof (identity_commitment H₁ H₂ IdentityNullifier IdentityTrapdoor) = Root
 
-theorem double_vote (IdentityNullifier: F) (IdentityTrapdoor: F) (TreePathIndices: Vector F 3) (TreeSiblings: Vector F 3) (SignalHash: F) (ExternalNullifier: F) (NullifierHash: F) (MTRoot: F) :
-    circuit IdentityNullifier IdentityTrapdoor TreePathIndices TreeSiblings SignalHash ExternalNullifier NullifierHash MTRoot → 
-    generate_nullifier dummy_hash IdentityNullifier ExternalNullifier = NullifierHash := by
-    sorry
+lemma circuit_simplified (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash Root: F) (Path Proof: Vector F 3):
+    circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Root ↔
+    circuit_simpl dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash Root Path Proof := by sorry
+
+theorem signaller_is_in_tree
+    (IdentityNullifier IdentitityTrapdoor SignalHash ExtNullifier NullifierHash : F)
+    (Tree : MerkleTree F dummy_hash₂ 3)
+    (Path Proof: Vector F 3)
+    [Fact (perfect_hash dummy_hash₂)]
+    :
+    circuit IdentityNullifier IdentitityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
+    Tree.item_at (create_dir_vec Path) = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentitityTrapdoor := by sorry
+
+theorem no_double_signal_with_same_commitment
+    (IdentityNullifier₁ IdentityNullifier₂ IdentitityTrapdoor₁ IdentitityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
+    (Path₁ Proof₁ Path₂ Proof₂: Vector F 3)
+    [Fact (perfect_hash dummy_hash₂)]
+    [Fact (perfect_hash dummy_hash₁)]
+    :
+    circuit IdentityNullifier₁ IdentitityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ →
+    circuit IdentityNullifier₂ IdentitityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ →
+    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentitityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentitityTrapdoor₂ →
+    NullifierHash₁ = NullifierHash₂ := by sorry
