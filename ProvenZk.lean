@@ -80,11 +80,16 @@ theorem always_possible_to_signal
         IdentityNullifier
         IdentitityTrapdoor
         Path
-        (Tree.proof (create_dir_vec Path))
+        (Tree.proof (create_dir_vec Path)) -- Siblings
         SignalHash
         ExtNullifier
-        (nullifier_hash dummy_hash₂ ExtNullifier IdentityNullifier)
-        Tree.root := by sorry
+        (nullifier_hash dummy_hash₂ ExtNullifier IdentityNullifier) -- NullifierHash
+        Tree.root := by
+        rw [circuit_simplified IdentityNullifier _ SignalHash ExtNullifier _ _ _ _]
+        rw [<-MerkleTree.recover_proof_is_root _ (create_dir_vec Path) Tree]
+        rw [comm_in_tree]
+        unfold circuit_simpl
+        simp
 
 theorem signaller_is_in_tree
     (IdentityNullifier IdentitityTrapdoor SignalHash ExtNullifier NullifierHash : F)
