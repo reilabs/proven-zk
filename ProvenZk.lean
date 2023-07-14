@@ -91,22 +91,37 @@ theorem always_possible_to_signal
         unfold circuit_simpl
         simp
 
+-- circuit Proof = (MerkleTree.proof Tree (create_dir_vec Path))
+theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F) (Path Proof: Vector F 3) (Tree : MerkleTree F dummy_hash₂ 3) :
+    circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Tree.root =
+    circuit IdentityNullifier IdentityTrapdoor Path (MerkleTree.proof Tree (create_dir_vec Path)) SignalHash ExternalNullifier NullifierHash Tree.root := by
+    sorry
+
 theorem signaller_is_in_tree
-    (IdentityNullifier IdentitityTrapdoor SignalHash ExtNullifier NullifierHash : F)
+    (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)
     (Tree : MerkleTree F dummy_hash₂ 3)
     (Path Proof: Vector F 3)
     [Fact (perfect_hash dummy_hash₂)]
     :
-    circuit IdentityNullifier IdentitityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
-    Tree.item_at (create_dir_vec Path) = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentitityTrapdoor := by sorry
+    circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
+    Tree.item_at (create_dir_vec Path) = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor := by
+    rw [circuit_proof IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash Path Proof Tree]
+    rw [circuit_simplified IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash _]
+    unfold circuit_simpl
+    rw [<-MerkleTree.recover_proof_is_root _ (create_dir_vec Path) Tree]
+    let path := create_dir_vec Path
+    let proof := MerkleTree.proof Tree (create_dir_vec Path)
+    rw [MerkleTree.equal_recover_equal_tree dummy_hash₂ path proof (identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor)
+                                                        path proof (MerkleTree.item_at Tree (create_dir_vec Path))]
+    simp
 
 theorem no_double_signal_with_same_commitment
-    (IdentityNullifier₁ IdentityNullifier₂ IdentitityTrapdoor₁ IdentitityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
+    (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
     (Path₁ Proof₁ Path₂ Proof₂: Vector F 3)
     [Fact (perfect_hash dummy_hash₂)]
     [Fact (perfect_hash dummy_hash₁)]
     :
-    circuit IdentityNullifier₁ IdentitityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ →
-    circuit IdentityNullifier₂ IdentitityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ →
-    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentitityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentitityTrapdoor₂ →
+    circuit IdentityNullifier₁ IdentityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ →
+    circuit IdentityNullifier₂ IdentityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ →
+    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityTrapdoor₂ IdentityTrapdoor₂ →
     NullifierHash₁ = NullifierHash₂ := by sorry
