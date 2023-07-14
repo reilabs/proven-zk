@@ -127,9 +127,16 @@ theorem no_double_signal_with_same_commitment
     :
     circuit IdentityNullifier₁ IdentityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ →
     circuit IdentityNullifier₂ IdentityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ →
-    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityTrapdoor₂ IdentityTrapdoor₂ →
+    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ →
     NullifierHash₁ = NullifierHash₂ := by
     rw [circuit_simplified IdentityNullifier₁ IdentityTrapdoor₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ Path₁ Proof₁]
     rw [circuit_simplified IdentityNullifier₂ IdentityTrapdoor₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ Path₂ Proof₂]
     unfold circuit_simpl
+    intro h₁
+    intro h₂
+    intro h₃
+    -- cases h₁.left
+    -- cases h₂.left
+    -- unfold identity_commitment
+    -- unfold nullifier_hash
     sorry
