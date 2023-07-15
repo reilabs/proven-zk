@@ -63,10 +63,54 @@ def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proo
       | Dir.left => H vec![recover', pitem]
       | Dir.right => H vec![pitem, recover']
 
+-- Same proof and path imply same item
 theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2) 
   (ix : Vector Dir depth) (proof : Vector F depth) (item₁ : F) (item₂ : F)
+  [Fact (perfect_hash H)]
   :
-  (MerkleTree.recover H ix proof item₁ = MerkleTree.recover H ix proof item₂) = (item₁ = item₂) := by sorry
+  (MerkleTree.recover H ix proof item₁ = MerkleTree.recover H ix proof item₂) ↔ (item₁ = item₂) := by
+  apply Iff.intro
+  case mp => {
+    induction depth with
+    | zero => {
+      intro h
+      unfold recover at h
+      assumption
+    }
+    | succ _ ih => {
+      intro h
+      unfold recover at h
+      split at h
+      {
+        simp at h
+        have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
+        simp at inps_same
+        apply ih
+        assumption
+      }
+      {
+        simp at h
+        have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
+        simp at inps_same
+        apply ih
+        assumption
+      }
+    }
+  }
+  case mpr => {
+    induction depth with
+    | zero => {
+      intro h
+      unfold recover
+      assumption
+    }
+    | succ _ _ => {
+      intro h
+      unfold recover
+      simp
+      split <;> simp [*]
+    }
+  }
 
 -- Recover the Merkle tree from partial hashes. From top to bottom. It returns the item at the bottom (i.e. leaf)
 def recover_tail {depth : Nat} {F: Type} (H: Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
@@ -133,14 +177,6 @@ theorem recover_proof_is_root
       unfold root
       congr <;> simp [*, proof, tree_for, left, right, Dir.swap, item_at, ih]
     )
-
-lemma recover_tail_reverse_is_root
-  {F depth}
-  (H : Hash F 2)
-  (ix : Vector Dir depth)
-  (tree : MerkleTree F H depth) :
-  recover_tail H ix.reverse (tree.proof ix).reverse (tree.item_at ix) = tree.root := by
-  sorry
 
 -- Set item in the tree at position ix
 def set { depth : Nat } {F: Type} {H : Hash F 2} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (item : F) : MerkleTree F H depth := match depth with
