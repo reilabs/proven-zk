@@ -62,6 +62,16 @@ def nullifier_hash {F: Type} (H₂: Hash F 2) (IdentityNullifier: F) (ExternalNu
 def dummy_hash₁ : Hash F 1 := fun a => a[0] * a[0]
 def dummy_hash₂ : Hash F 2 := fun a => a[0] * a[1]
 
+theorem symmetry_prop {a b : F} (h : a = b) : b = a := by
+    rw [Eq.symm h]
+
+theorem same_hash_same_identity (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ : F)
+    [Fact (perfect_hash dummy_hash₂)]
+    [Fact (perfect_hash dummy_hash₁)]:
+    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ ↔
+    (IdentityNullifier₁ = IdentityNullifier₂ ∧ IdentityTrapdoor₁ = IdentityTrapdoor₂) :=
+    by sorry
+
 def circuit_simpl (H₁: Hash F 1) (H₂: Hash F 2) (IdentityNullifier IdentityTrapdoor _ ExternalNullifier NullifierHash Root: F) (Path Proof: Vector F 3): Prop :=
     NullifierHash = nullifier_hash H₂ ExternalNullifier IdentityNullifier ∧
     MerkleTree.recover H₂ (create_dir_vec Path) Proof (identity_commitment H₁ H₂ IdentityNullifier IdentityTrapdoor) = Root
@@ -92,22 +102,6 @@ theorem always_possible_to_signal
         unfold circuit_simpl
         simp
 
-theorem symmetry_prop {a b : F} (h : a = b) : b = a := by
-    rw [Eq.symm h]
-
-theorem equal_proof_equal_tree' {depth : Nat} {F: Type} (H : Hash F 2) 
-  (ix : Vector Dir depth) (proof₁ : Vector F depth) (proof₂ : Vector F depth) (item₁ : F) (item₂ : F)
-  :
-  (MerkleTree.recover H ix proof₁ item₁ = MerkleTree.recover H ix proof₂ item₂) ↔ (item₁ = item₂) ∧ (proof₁ = proof₂) := by
-  sorry
-
-theorem same_hash_same_identity (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ : F)
-    [Fact (perfect_hash dummy_hash₂)]
-    [Fact (perfect_hash dummy_hash₁)]:
-    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ ↔
-    (IdentityNullifier₁ = IdentityNullifier₂ ∧ IdentityTrapdoor₁ = IdentityTrapdoor₂) :=
-    by sorry
-
 theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash : F) (Path Proof: Vector F 3) (Tree : MerkleTree F dummy_hash₂ 3) 
     [Fact (perfect_hash dummy_hash₂)]:
     circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Tree.root =
@@ -117,34 +111,8 @@ theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNul
     unfold circuit_simpl
     simp
     intro
-    let ix := (create_dir_vec Path)
-    rw [<-MerkleTree.recover_proof_is_root _ ix _]
-    intros
+    rw [MerkleTree.same_root_same_proof]
     simp
-    apply Iff.intro
-    case mp => 
-    {
-        intro h
-        rw [equal_proof_equal_tree'] at h
-        rw [equal_proof_equal_tree']
-        simp
-        rw [h.left]
-    }
-    case mpr =>
-    {
-        intro h
-        rw [equal_proof_equal_tree'] at h
-        rw [equal_proof_equal_tree']
-        simp at h
-        apply And.intro
-        case left => assumption
-        case right =>
-        {
-            let item := identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor
-            -- STUCK!
-            sorry
-        }
-    }
 
 theorem signaller_is_in_tree
     (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)

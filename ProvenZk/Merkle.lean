@@ -112,6 +112,15 @@ theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2)
     }
   }
 
+theorem same_root_same_proof {depth : Nat} {F: Type} (H : Hash F 2) 
+    (ix : Vector Dir depth)
+    (proof₁ : Vector F depth) (proof₂ : Vector F depth)
+    (item₁ : F) (item₂ : F) 
+    (root₁ : F) (root₂ : F)
+    :
+    (MerkleTree.recover H ix proof₁ item₁ = root₁ ↔ MerkleTree.recover H ix proof₂ item₂ = root₂) ↔ (item₁ = item₂ ∧ root₁ = root₂) := by
+    sorry
+
 -- Recover the Merkle tree from partial hashes. From top to bottom. It returns the item at the bottom (i.e. leaf)
 def recover_tail {depth : Nat} {F: Type} (H: Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
   | Nat.zero => item
