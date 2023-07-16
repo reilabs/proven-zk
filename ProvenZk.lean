@@ -92,18 +92,24 @@ theorem always_possible_to_signal
         unfold circuit_simpl
         simp
 
--- theorem equal_item_equal_tree {depth : Nat} {F: Type} (H : Hash F 2) 
---   (ix : Vector Dir depth) (proof₁ : Vector F depth) (proof₂ : Vector F depth) (item : F)
---   :
---   (MerkleTree.recover H ix proof₁ item = MerkleTree.recover H ix proof₂ item) = (proof₁ = proof₂) := by sorry
-
 theorem symmetry_prop {a b : F} (h : a = b) : b = a := by
     rw [Eq.symm h]
 
-theorem symmetry_trans_prop (a b c : F) {h : a = b ↔ c = b} : a = c := by
-    sorry
+theorem equal_proof_equal_tree' {depth : Nat} {F: Type} (H : Hash F 2) 
+  (ix : Vector Dir depth) (proof₁ : Vector F depth) (proof₂ : Vector F depth) (item₁ : F) (item₂ : F)
+  :
+  (MerkleTree.recover H ix proof₁ item₁ = MerkleTree.recover H ix proof₂ item₂) ↔ (item₁ = item₂) ∧ (proof₁ = proof₂) := by
+  sorry
 
-theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash : F) (Path Proof: Vector F 3) (Tree : MerkleTree F dummy_hash₂ 3) :
+theorem same_hash_same_identity (IdentityNullifier₁ IdentityNullifier₂ IdentityTrapdoor₁ IdentityTrapdoor₂ : F)
+    [Fact (perfect_hash dummy_hash₂)]
+    [Fact (perfect_hash dummy_hash₁)]:
+    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ ↔
+    (IdentityNullifier₁ = IdentityNullifier₂ ∧ IdentityTrapdoor₁ = IdentityTrapdoor₂) :=
+    by sorry
+
+theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNullifier NullifierHash : F) (Path Proof: Vector F 3) (Tree : MerkleTree F dummy_hash₂ 3) 
+    [Fact (perfect_hash dummy_hash₂)]:
     circuit IdentityNullifier IdentityTrapdoor Path Proof SignalHash ExternalNullifier NullifierHash Tree.root =
     circuit IdentityNullifier IdentityTrapdoor Path (MerkleTree.proof Tree (create_dir_vec Path)) SignalHash ExternalNullifier NullifierHash Tree.root := by
     rw [circuit_simplified]
@@ -115,14 +121,30 @@ theorem circuit_proof (IdentityNullifier IdentityTrapdoor SignalHash ExternalNul
     rw [<-MerkleTree.recover_proof_is_root _ ix _]
     intros
     simp
-    let a := MerkleTree.recover dummy_hash₂ (create_dir_vec Path) Proof (identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor)
-    let b := MerkleTree.recover dummy_hash₂ (create_dir_vec Path) (MerkleTree.proof Tree (create_dir_vec Path)) (MerkleTree.item_at Tree (create_dir_vec Path))
-    let c := MerkleTree.recover dummy_hash₂ (create_dir_vec Path) (MerkleTree.proof Tree (create_dir_vec Path)) (identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor)
-    -- STUCK!
-    --rw [symmetry_trans_prop a b c]
-    --apply symmetry_trans_prop
-    -- rw [<-equal_item_equal_tree _ (create_dir_vec Path) ]
-    sorry
+    apply Iff.intro
+    case mp => 
+    {
+        intro h
+        rw [equal_proof_equal_tree'] at h
+        rw [equal_proof_equal_tree']
+        simp
+        rw [h.left]
+    }
+    case mpr =>
+    {
+        intro h
+        rw [equal_proof_equal_tree'] at h
+        rw [equal_proof_equal_tree']
+        simp at h
+        apply And.intro
+        case left => assumption
+        case right =>
+        {
+            let item := identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentityTrapdoor
+            -- STUCK!
+            sorry
+        }
+    }
 
 theorem signaller_is_in_tree
     (IdentityNullifier IdentityTrapdoor SignalHash ExtNullifier NullifierHash : F)
@@ -153,6 +175,7 @@ theorem no_double_signal_with_same_commitment
     :
     circuit IdentityNullifier₁ IdentityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ →
     circuit IdentityNullifier₂ IdentityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ →
+    ExtNullifier₁ = ExtNullifier₂ →
     identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentityTrapdoor₂ →
     NullifierHash₁ = NullifierHash₂ := by
     rw [circuit_simplified IdentityNullifier₁ IdentityTrapdoor₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ Path₁ Proof₁]
@@ -161,11 +184,18 @@ theorem no_double_signal_with_same_commitment
     intro h₁
     intro h₂
     intro h₃
+    intro h₄
     cases h₁
+    rename_i hr₁
+    rename_i hl₁
     cases h₂
-    -- STUCK!
-    -- cases h₁.left
-    -- cases h₂.left
-    -- unfold identity_commitment
-    -- unfold nullifier_hash
-    sorry
+    rename_i hr₂
+    rename_i hl₂
+    rw [hl₂]
+    rw [hl₁]
+    rw [same_hash_same_identity] at h₄
+    cases h₄
+    rename_i hr₄
+    rename_i hl₄
+    rw [h₃]
+    rw [hl₄]
