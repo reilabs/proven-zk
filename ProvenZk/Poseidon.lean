@@ -63,7 +63,24 @@ theorem test_vector_correct:
   perm vec![0,1,2] = vec![0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a, 0x0fca49b798923ab0239de1c9e7a4a9a2210312b6a2f616d18b5a87f9b628ae29, 0x0e7ae82e40091e63cbd4f16a6d16310b3729d4b6e138fcf54110e2867045a30c] := by eq_refl
 
 lemma vector_3_decomp [Inhabited α] (v : Vector α 3): v = vec![v[0]!, v[1]!, v[2]!] := by
-  sorry
+    apply Vector.eq
+    simp
+    cases v; rename_i l p
+    cases l
+    { simp [List.length] at p }
+    {
+        rename_i h t; cases t
+        { simp [List.length] at p }
+        {
+            rename_i h' t'; cases t'
+            { simp [List.length] at p }
+            {
+                rename_i h'' t''; cases t''
+                { simp [getElem] }
+                { simp [List.length] at p }
+            }
+        }
+    }
 
 def full_rounds_step_1 (inp : MProd Nat (Vector F 3)) (num_rounds : Nat): Id (MProd Nat (Vector F 3)) := do
   let mut round_constants_counter := inp.1

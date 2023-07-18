@@ -22,9 +22,15 @@ lemma sbox_uncps (A : F) (k : F -> Prop): sbox A k = k (A ^ 5) := by
   simp_arith
   apply fin_mod _
 
+lemma iff_to_eq {α} {a b: α} {k : α -> Prop }: a = b -> (k a ↔ k b) := by intro eq; rw [eq]
 
 lemma mds_uncps (S : Vector F 3) (k : Vector F 3 -> Prop): mds_3 S k = k (Poseidon.mds_matmul S) := by
-  sorry
+  simp [mds_3, Gates.add, Gates.mul]
+  apply iff_to_eq
+  simp [Poseidon.mds_matmul, Matrix.column_from_vector, Matrix.of, Matrix.mul, Matrix.dotProduct]
+  simp [Finset.univ, Fintype.elems, mul_comm, add_assoc, Matrix.column_from_vector, Poseidon.MDS_matrix_field, Poseidon.MDS_matrix]
+  simp [Matrix.vecCons, Fin.cons, Fin.cases, Fin.induction]
+  conv => rhs; enter [2,2]; simp [mul_comm]
 
 lemma full_round_uncps (S C: Vector F 3) (k : Vector F 3 -> Prop): fullRound_3_3 S C k = k (Poseidon.full_round S C) := by
   conv => lhs; simp [fullRound_3_3, Gates.add, sbox_uncps, mds_uncps]
@@ -32,28 +38,6 @@ lemma full_round_uncps (S C: Vector F 3) (k : Vector F 3 -> Prop): fullRound_3_3
 lemma half_round_uncps (S C: Vector F 3) (k : Vector F 3 -> Prop): halfRound_3_3 S C k = k (Poseidon.partial_round S C) := by
   conv => lhs; simp [halfRound_3_3, Gates.add, sbox_uncps, mds_uncps]
 
-lemma iff_to_eq {α} {a b: α} {k : α -> Prop }: a = b -> (k a ↔ k b) := by intro eq; rw [eq]
-
-
--- lemma full_rounds_1_uncps {S: Vector F 3} {k: Vector F 3 -> Prop}:
---   full_rounds_cps' S 0 4 k = k (Poseidon.full_rounds_step_3 ⟨0, S⟩ 4).2 := by
---   simp [full_rounds_cps', full_round_uncps, round_constants', Poseidon.round_constants_field, getElem!]
---   apply iff_to_eq
---   unfold Poseidon.full_rounds_step_3
---   simp
---   split; rename_i h; rw [←h]; clear h
---   simp [forIn, Std.Range.forIn, Std.Range.forIn.loop, Poseidon.round_constants_field]
---   simp [getElem!]
-
--- lemma full_rounds_2_uncps {S : Vector F 3} {k : Vector F 3 -> Prop}:
---   full_rounds_cps' S 183 4 k = k (Poseidon.full_rounds_step_3 ⟨183, S⟩ 4).2 := by
---   simp [full_rounds_cps', full_round_uncps, round_constants', Poseidon.round_constants_field, getElem!]
---   apply iff_to_eq
---   unfold Poseidon.full_rounds_step_3
---   simp
---   split; rename_i h; rw [←h]; clear h
---   simp [forIn, Std.Range.forIn, Std.Range.forIn.loop, Poseidon.round_constants_field]
---   simp [getElem!]
 
 lemma full_rounds_cps'_tear (state: Vector F 3) (init_const: Nat) (round_count: Nat) (k : Vector F 3 -> Prop):
     full_rounds_cps' (state: Vector F 3) (init_const) (round_count.succ) k =
