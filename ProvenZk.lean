@@ -5,6 +5,7 @@ import ProvenZk.Gates
 import ProvenZk.Hash
 import ProvenZk.Merkle
 import ProvenZk.VectorExtensions
+import ProvenZk.RecursionSchemes
 
 def Order : ℕ := 21888242871839275222246405745257275088548364400416034343698204186575808495617
 variable [Fact (Nat.Prime Order)]
@@ -95,13 +96,17 @@ theorem signaller_is_in_tree
     circuit IdentityNullifier IdentitityTrapdoor Path Proof SignalHash ExtNullifier NullifierHash Tree.root →
     Tree.item_at (create_dir_vec Path) = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier IdentitityTrapdoor := by sorry
 
-theorem no_double_signal_with_same_commitment
-    (IdentityNullifier₁ IdentityNullifier₂ IdentitityTrapdoor₁ IdentitityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
-    (Path₁ Proof₁ Path₂ Proof₂: Vector F 3)
-    [Fact (perfect_hash dummy_hash₂)]
-    [Fact (perfect_hash dummy_hash₁)]
-    :
-    circuit IdentityNullifier₁ IdentitityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ →
-    circuit IdentityNullifier₂ IdentitityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ →
-    identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentitityTrapdoor₁ = identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentitityTrapdoor₂ →
-    NullifierHash₁ = NullifierHash₂ := by sorry
+--  (perfect_hash dummy_hash₂)
+--     [Fact (perfect_hash dummy_hash₁)]
+
+theorem no_double_signal_with_same_commitment:
+    ∀
+    (IdentityNullifier₁ : F)
+    (IdentityNullifier₂ : F)
+    (IdentitityTrapdoor₁ IdentitityTrapdoor₂ SignalHash₁ SignalHash₂ ExtNullifier₁ ExtNullifier₂ NullifierHash₁ NullifierHash₂ Root₁ Root₂ : F)
+    (Path₁ Proof₁ Path₂ Proof₂: Vector F 3),
+    (circuit IdentityNullifier₁ IdentitityTrapdoor₁ Path₁ Proof₁ SignalHash₁ ExtNullifier₁ NullifierHash₁ Root₁ ∧
+     circuit IdentityNullifier₂ IdentitityTrapdoor₂ Path₂ Proof₂ SignalHash₂ ExtNullifier₂ NullifierHash₂ Root₂ ∧
+       identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₁ IdentitityTrapdoor₁ =
+       identity_commitment dummy_hash₁ dummy_hash₂ IdentityNullifier₂ IdentitityTrapdoor₂)
+    → NullifierHash₁ = NullifierHash₂ := by sorry

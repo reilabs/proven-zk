@@ -38,6 +38,12 @@ theorem reverse_cons_snoc {T n} (v: Vector T n) (x: T): reverse (cons x v) = sno
   apply Vector.eq
   simp [toList_snoc, toList_reverse]
 
+theorem reverse_snoc_cons {T n} (v: Vector T n) (x: T): reverse (snoc v x) = cons x (reverse v) := by
+  apply Vector.eq
+  simp [toList_snoc, toList_reverse]
+
+
+
 @[simp]
 def element_wise_eq {T n} (v1 v2: Vector T n): Prop := match n with
   | Nat.zero => True
@@ -50,6 +56,20 @@ theorem elems_eq {T n} {v1 v2: Vector T n}: v1 = v2 -> element_wise_eq v1 v2 := 
     intro h
     simp [element_wise_eq, *]
 
+theorem reverse_singleton {T} (v : Vector T 1) : reverse v = v := by
+  cases v; rename_i l p
+  apply Vector.eq
+  rw [toList_reverse]
+  unfold toList
+  simp
+  cases l
+  . contradiction
+  . rename_i h t
+    cases t
+    . simp
+    . simp at p
+
+
 syntax (priority := high) "vec![" term,* "]" : term
 macro_rules
   | `(vec![]) => `(nil)
@@ -57,6 +77,9 @@ macro_rules
   | `(vec![$x, $xs:term,*]) => `(cons $x (vec![$xs,*]))
 
 instance : GetElem (Vector a l) (Nat) a (fun _ i => i < l) where
-  getElem xs i h := xs.get ⟨i, h⟩
+  getElem xs i h := xs.toList.get ⟨i, by rw [Vector.toList_length]; exact h⟩
+
+theorem head_eq (v1 v2 : Vector α (Nat.succ n)) (h : v1 = v2) : v1[0] = v2[0] := by
+  rw [h]
 
 end Vector
