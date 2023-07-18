@@ -128,12 +128,32 @@ def round_constants (roundNo: Nat) (_: roundNo < 65): Vector F 3 := vec![
   Poseidon.round_constants_field[roundNo * 3 + 2]'(by simp [Array.size]; linarith)
 ]
 
+def round_constants' (fst : Nat): Vector F 3 := vec![
+    Poseidon.round_constants_field[fst]!,
+    Poseidon.round_constants_field[fst.succ]!,
+    Poseidon.round_constants_field[fst.succ.succ]!
+]
+
+def full_rounds_cps' (state: Vector F 3) (init_const: Nat) (round_count: Nat) (k : Vector F 3 -> Prop): Prop := match round_count with
+| Nat.zero => k state
+| Nat.succ round_count =>
+    fullRound_3_3 state (round_constants' init_const) fun state' =>
+        full_rounds_cps' state' (init_const.succ.succ.succ) round_count k
+
 def full_rounds_cps (state: Vector F 3) (rounds: Nat) (roundNo: Nat) (_: roundNo + rounds <= 65) (k : Vector F 3 -> Prop): Prop := match rounds with
 | Nat.zero => k state
 | Nat.succ r =>
     have _: roundNo < 65 := by linarith
     fullRound_3_3 state (round_constants roundNo (by assumption)) fun state' =>
         full_rounds_cps state' r (Nat.succ roundNo) (by linarith) k
+
+def half_rounds_cps' (state: Vector F 3) (init_const: Nat) (round_count: Nat) (k : Vector F 3 -> Prop): Prop := match round_count with
+| Nat.zero => k state
+| Nat.succ round_count =>
+    halfRound_3_3 state (round_constants' init_const) fun state' =>
+        half_rounds_cps' state' (init_const.succ.succ.succ) round_count k
+
+
 
 def half_rounds_cps (state: Vector F 3) (rounds: Nat) (roundNo: Nat) (_: (roundNo + rounds <= 65)) (k : Vector F 3 -> Prop): Prop := match rounds with
 | Nat.zero => k state
@@ -146,6 +166,40 @@ def looped_Poseidon (A B: F) (k: F -> Prop): Prop :=
     full_rounds_cps vec![0, A, B] 4 0 (by simp_arith) fun state =>
     half_rounds_cps state 57 4 (by simp_arith) fun state' =>
     full_rounds_cps state' 4 61 (by simp_arith) fun state'' => k state''[0]
+
+def looped_Poseidon' (A B: F) (k: F -> Prop): Prop :=
+    full_rounds_cps' vec![0, A, B] 0 4 fun state =>
+    half_rounds_cps' state 12 57  fun state' =>
+    full_rounds_cps' state' 183 4 fun state'' => k state''[0]
+
+set_option maxRecDepth 2048
+
+lemma fold_vec {v : Vector F 3}: vec![v[0], v[1], v[2]] = v := by
+    apply Vector.eq
+    simp
+    cases v; rename_i l p
+    cases l
+    { simp [List.length] at p }
+    {
+        rename_i h t; cases t
+        { simp [List.length] at p }
+        {
+            rename_i h' t'; cases t'
+            { simp [List.length] at p }
+            {
+                rename_i h'' t''; cases t''
+                { simp [getElem] }
+                { simp [List.length] at p }
+            }
+        }
+    }
+
+theorem looped_Poseidon'_go (A B : F) (k : F -> Prop):
+    Poseidon A B k = looped_Poseidon' A B k:= by
+    unfold looped_Poseidon'
+    unfold Poseidon
+    simp [full_rounds_cps', half_rounds_cps', round_constants', Poseidon.round_constants_field, getElem!, fold_vec]
+
 
 theorem cps_rewrite {A} (F: (A -> Prop) -> Prop) (x1 x2: A -> Prop): (∀a, x1 a ↔ x2 a) -> (F x1 ↔ F x2) := by
     intro h
