@@ -2,9 +2,6 @@ import Mathlib
 
 namespace Vector
 
--- Add x to the end of the vector
-def snoc {α n} (v: Vector α n) (x: α) : Vector α n.succ := v.append (x ::ᵥ nil)
-
 theorem toList_tail {α n} (v: Vector α (Nat.succ n)) : v.tail.toList = v.toList.tail := by
   rw [←cons_head_tail v]
   rw [toList_cons]
