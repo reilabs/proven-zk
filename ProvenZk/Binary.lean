@@ -1,4 +1,5 @@
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Data.Bitvec.Defs
 
 inductive Bit : Type where
   | zero : Bit
