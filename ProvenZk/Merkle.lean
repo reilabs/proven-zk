@@ -80,37 +80,17 @@ theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2)
     | succ _ ih => {
       intro h
       unfold recover at h
-      split at h
-      {
-        simp at h
-        have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
-        simp at inps_same
-        apply ih
-        assumption
-      }
-      {
-        simp at h
-        have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
-        simp at inps_same
-        apply ih
-        assumption
+      split at h <;> {
+              simp at h
+              have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
+              simp at inps_same
+              apply ih
+              assumption
       }
     }
   }
-  case mpr => {
-    induction depth with
-    | zero => {
-      intro h
-      unfold recover
-      assumption
-    }
-    | succ _ _ => {
-      intro h
-      unfold recover
-      simp
-      split <;> simp [*]
-    }
-  }
+  intro h
+  rw [h]
 
 theorem same_root_same_proof {depth : Nat} {F: Type} (H : Hash F 2) 
     (ix : Vector Dir depth)
