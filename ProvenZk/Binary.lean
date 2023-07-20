@@ -1,8 +1,10 @@
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Data.Bitvec.Defs
 
 inductive Bit : Type where
   | zero : Bit
   | one : Bit
+  deriving Repr, BEq
 
 namespace Bit
 def toNat : Bit -> Nat := fun b => match b with
@@ -25,17 +27,78 @@ instance : OfNat Bit 0 where
 instance : OfNat Bit 1 where
   ofNat := one
 
+instance : Inhabited Bit where
+  default := zero
+
 end Bit
+
+theorem double_succ_ne_zero (n : Nat) : Nat.succ (Nat.succ n) ≠ 0 := by
+  simp
+
+theorem double_succ_ne_one (n : Nat) : Nat.succ (Nat.succ n) ≠ 1 := by
+  simp
+
+def nat_to_bit_with_condition (x : Nat) {cond : x = 0 ∨ x = 1} : Bit := match p : x with
+  | 0 => Bit.zero
+  | 1 => Bit.one
+  | Nat.succ (Nat.succ _) => False.elim (by
+    cases cond with
+    | inl =>
+      rename_i h
+      rename_i input
+      apply double_succ_ne_zero input
+      exact h
+    | inr =>
+      rename_i h
+      rename_i input
+      apply double_succ_ne_one input
+      exact h
+  )
+
+def nat_to_bit (x : Nat) : Bit := match x with
+  | 0 => Bit.zero
+  | 1 => Bit.one
+  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
+
+def nat_to_bit' (x : Nat) : Option Bit := match x with
+  | 0 => Option.some Bit.zero
+  | 1 => Option.some Bit.one
+  | Nat.succ (Nat.succ _) => Option.none
+
+def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
+  | 0 => Bit.zero
+  | 1 => Bit.one
+  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
+
+def zmod_to_bit' {n} (x : ZMod n) : Option Bit := match ZMod.val x with
+  | 0 => Option.some Bit.zero
+  | 1 => Option.some Bit.one
+  | Nat.succ (Nat.succ _) => Option.none
+
+def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
+
+def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
+  (List.foldr (fun a r => is_bit a ∧ r) true (Vector.toList x))
+
+def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
+  Vector.map nat_to_bit (Vector.map ZMod.val a)
 
 def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toNat + 2 * recover_binary_nat rep.tail
 
-def recover_binary_zmod {n d} (rep : Vector Bit d) : ZMod n := match d with
+def recover_binary_zmod {d n} (rep : Vector Bit d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toZMod + 2 * recover_binary_zmod rep.tail
 
+def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d with
+  | 0 => 0
+  | Nat.succ _ => rep.head + 2 * recover_binary_zmod' rep.tail
+
 def is_binary_of {n d} (inp : ZMod n) (rep : Vector Bit d): Prop := inp = recover_binary_zmod rep
+
+def nat_n_bits (a : Nat) (digits : Nat) : Nat :=
+  Bitvec.bitsToNat (List.reverse (List.take digits (List.reverse (Nat.bits a))))
 
 lemma even_ne_odd (a b : Nat): 2 * a ≠ 2 * b + 1 := by
   intro h
