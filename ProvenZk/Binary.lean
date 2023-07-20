@@ -100,9 +100,6 @@ def is_binary_of {n d} (inp : ZMod n) (rep : Vector Bit d): Prop := inp = recove
 def nat_n_bits (a : Nat) (digits : Nat) : Nat :=
   Bitvec.bitsToNat (List.reverse (List.take digits (List.reverse (Nat.bits a))))
 
-def zmod_n_bits{n} (a : ZMod n) (b : Nat) : ZMod n :=
-  Bitvec.bitsToNat (List.reverse (List.take b (List.reverse (Nat.bits (ZMod.val a)))))
-
 lemma even_ne_odd (a b : Nat): 2 * a ≠ 2 * b + 1 := by
   intro h
   induction a generalizing b with
