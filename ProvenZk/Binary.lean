@@ -91,6 +91,10 @@ def recover_binary_zmod {d n} (rep : Vector Bit d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toZMod + 2 * recover_binary_zmod rep.tail
 
+def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d with
+  | 0 => 0
+  | Nat.succ _ => rep.head + 2 * recover_binary_zmod' rep.tail
+
 def is_binary_of {n d} (inp : ZMod n) (rep : Vector Bit d): Prop := inp = recover_binary_zmod rep
 
 def nat_n_bits (a : Nat) (digits : Nat) : Nat :=
