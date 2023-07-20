@@ -1,5 +1,5 @@
 import Mathlib.Data.ZMod.Basic
-import Mathlib.Data.Bitvec.Core
+import Mathlib.Data.Bitvec.Defs
 
 inductive Bit : Type where
   | zero : Bit
@@ -91,13 +91,14 @@ def recover_binary_zmod {d n} (rep : Vector Bit d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toZMod + 2 * recover_binary_zmod rep.tail
 
+def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d with
+  | 0 => 0
+  | Nat.succ _ => rep.head + 2 * recover_binary_zmod' rep.tail
+
 def is_binary_of {n d} (inp : ZMod n) (rep : Vector Bit d): Prop := inp = recover_binary_zmod rep
 
 def nat_n_bits (a : Nat) (digits : Nat) : Nat :=
   Bitvec.bitsToNat (List.reverse (List.take digits (List.reverse (Nat.bits a))))
-
-def zmod_n_bits{n} (a : ZMod n) (b : Nat) : ZMod n :=
-  Bitvec.bitsToNat (List.reverse (List.take b (List.reverse (Nat.bits (ZMod.val a)))))
 
 lemma even_ne_odd (a b : Nat): 2 * a ≠ 2 * b + 1 := by
   intro h
