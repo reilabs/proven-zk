@@ -5,18 +5,24 @@ namespace Vector
 
 def snoc {α n} (v: Vector α n) (x: α) : Vector α n.succ := v.append (x ::ᵥ nil)
 
-def get! [Inhabited α] (l : List α) (i : Nat) : α := if h : i < l.length then l.get ⟨i, h⟩ else default
-
-def listSetLoopX [Inhabited α] (l : List α) (m : ℕ) (f : ℕ -> α -> α): List α := Id.run do
+def listSetLoopX (l : List α) (m : ℕ) (f : ℕ -> α -> α): List α := Id.run do
   let mut l := l
   for i in [0:m] do
-    l := l.set i (f i (l.get! i))
+    l := match h:l.length with
+    | Nat.zero => l
+    | Nat.succ _ => l.set i (f i (l.get (Fin.ofNat' i (by linarith))))
   l
 
+def listSetLoop (l : List α) (f : ℕ -> α -> α): List α := listSetLoopX l l.length f
 
-def listSetLoop [Inhabited α] (l : List α) (f : ℕ -> α -> α): List α := listSetLoopX l l.length f
+def mapIdx (v : Vector α n) (f : ℕ -> α -> β): Vector β n := ⟨v.toList.mapIdx f, by simp⟩
 
-def setLoop [Inhabited α] (v : Vector α n) (f : ℕ -> α -> α): Vector α n := match n with
+@[simp]
+theorem toList_mapIdx {v : Vector α n} {f : ℕ -> α -> β}:
+  (v.mapIdx f).toList = v.toList.mapIdx f := by
+  simp [mapIdx]
+
+def setLoop (v : Vector α n) (f : ℕ -> α -> α): Vector α n := match n with
   | Nat.zero => v
   | Nat.succ _ => Id.run do
     let mut v := v
@@ -24,44 +30,99 @@ def setLoop [Inhabited α] (v : Vector α n) (f : ℕ -> α -> α): Vector α n 
       v := v.set i (f i (v.get i))
     v
 
+@[simp]
+lemma toList_setLoop {α n} {v : Vector α n} {f : ℕ -> α -> α}:
+  (v.setLoop f).toList = listSetLoop v.toList f := by
+  simp [setLoop, listSetLoop, listSetLoopX]
+  cases n
+  {
+    simp [Id.run, forIn, Std.Range.forIn, Std.Range.forIn.loop]
+  }
+  {
+    rename_i n
+    simp
+    apply Std.Range.forIn_homo
+    simp
+    intro i v
+    split
+    { rename_i h; rw [toList_length] at h; contradiction }
+    {
+      rename_i h; rw [toList_length] at h; simp at h;
+      intro mem; simp [Membership.mem] at mem;
+      rw [get_eq_get]
+      apply congrArg₂
+      {
+        apply Nat.mod_eq_of_lt
+        assumption
+      }
+      {
+        apply congrArg₂
+        { rfl }
+        {
+          apply congr
+          { rfl }
+          simp [Fin.ofNat']
+          rfl
+        }
+      }
+    }
+  }
 
-
--- theorem length_listSetLoop [Inhabited α] {l : List α}
-
-lemma listMapIdx_appendOne [Inhabited α] (l1 : List α) (elem : α) (f : ℕ -> α -> α):
+lemma listMapIdx_appendOne (l1 : List α) (elem : α) (f : ℕ -> α -> α):
   (List.mapIdx f l1) ++ [f l1.length elem] = List.mapIdx f (l1 ++ [elem]) := by
   simp [List.mapIdx_append]
 
-lemma set_at_len [Inhabited α] (l1 l2 : List α) (it new : α):
+lemma set_at_len (l1 l2 : List α) (it new : α):
   (l1 ++ it :: l2).set l1.length new = l1 ++ new :: l2 := by
   induction l1 with
   | nil => simp [List.set]
   | cons => simp [*]
 
-lemma get_at_len [Inhabited α] (l1 l2 : List α) (it  : α):
-  (l1 ++ it :: l2).get! l1.length = it := by
+lemma get_at_len (l1 l2 : List α) (it : α):
+  (l1 ++ it :: l2).get (Fin.ofNat' l1.length (by simp)) = it := by
+  simp [Fin.ofNat']
+  have : ∀ {l1 l2: List α}, List.length l1 % (List.length l1 + Nat.succ (List.length l2)) = List.length l1 := by
+    intros
+    apply Nat.mod_eq_of_lt
+    simp
+  simp [this]
   induction l1 with
   | nil => simp
-  | cons => simp [*]
+  | cons x xs ih =>
+    unfold List.get
+    simp
+    apply ih
 
-lemma listMapIdx_setLoopApp [Inhabited α] (l1 l2 : List α) (f : ℕ -> α -> α):
+
+lemma listMapIdx_setLoopApp (l1 l2 : List α) (f : ℕ -> α -> α):
  (List.mapIdx f l1) ++ l2 = listSetLoopX (l1 ++ l2) l1.length f := by
   induction l1 using List.reverseRecOn generalizing l2 with
   | H0 => simp [listSetLoopX, Id.run, forIn, Std.Range.forIn, Std.Range.forIn.loop]
   | H1 xs x ih =>
     simp [listSetLoopX, forIn]
-    let g (i : ℕ) (l : List α) := List.set l i (f i (List.get! l i))
-    have : (fun i a => ForInStep.yield (List.set a i (f i (List.get! a i)))) = (fun i r => ForInStep.yield (g i r)) := by rfl
+    let g (i : ℕ) (l : List α) := match h:l.length with
+    | Nat.zero => l
+    | Nat.succ _ => l.set i (f i (l.get (Fin.ofNat' i (by linarith))))
+    have : (fun i l => ForInStep.yield (match h:l.length with
+    | Nat.zero => l
+    | Nat.succ _ => l.set i (f i (l.get (Fin.ofNat' i (by linarith)))))) = (fun i r => ForInStep.yield (g i r)) := by rfl
     rw [this]
     conv => rhs; enter [1,1,2]; rw [←Nat.zero_add (_ + _)]
     rw [Std.Range.forIn_stopSucc]
     simp
     clear g this
     simp [listSetLoopX, forIn] at ih
-    rw [←ih, ←listMapIdx_appendOne, ←List.length_mapIdx (l := xs) (f := f), set_at_len, get_at_len]
-    simp
+    rw [←ih, ←listMapIdx_appendOne]
+    have : List.length (List.mapIdx f xs ++ x :: l2) = Nat.succ (xs.length + l2.length):= by
+      simp; rw [Nat.add_succ]
+    split
+    { rename_i h; rw [this] at h; simp at h }
+    {
+      rw [←List.length_mapIdx (l := xs) (f := f), set_at_len, get_at_len]
+      simp
+    }
 
-lemma listMapIdx_setLoopX [Inhabited α] {l : List α} {f : ℕ -> α -> α }:
+lemma listMapIdx_setLoopX {l : List α} {f : ℕ -> α -> α }:
   List.mapIdx f l = listSetLoopX l l.length f := by
   have : List.mapIdx f l = List.mapIdx f l ++ [] := by simp
   conv => lhs ; rw [this]
@@ -69,12 +130,16 @@ lemma listMapIdx_setLoopX [Inhabited α] {l : List α} {f : ℕ -> α -> α }:
   conv => rhs ; arg 1; rw [this]
   apply listMapIdx_setLoopApp
 
-theorem listMapIdx_setLoop [Inhabited α] {l : List α} {f : ℕ -> α -> α }:
+theorem listMapIdx_setLoop {l : List α} {f : ℕ -> α -> α }:
   List.mapIdx f l = listSetLoop l f := by
   rw [listMapIdx_setLoopX, listSetLoop]
 
+theorem setLoop_mapIdx {v : Vector α n} {f : ℕ -> α -> α }:
+  v.setLoop f = v.mapIdx f := by
+  apply Vector.eq
+  simp [listMapIdx_setLoop]
 
-
+@[simp]
 theorem toList_tail {α n} (v: Vector α (Nat.succ n)) : v.tail.toList = v.toList.tail := by
   rw [←cons_head_tail v]
   rw [toList_cons]
