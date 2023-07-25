@@ -1,4 +1,4 @@
-import ProvenZk.VectorExtensions
+import ProvenZk.Ext.Vector
 
 def Hash (F: Type) (n: Nat) : Type := Vector F n -> F
 
