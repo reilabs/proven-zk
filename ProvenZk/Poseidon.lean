@@ -9,10 +9,12 @@ namespace Matrix
       res := res.push (m i 0)
     res
 
-  def to_vector {t α} (m : Matrix (Fin t) (Fin 1) α ) : Vector α t := Vector.ofFn (fun i => m i 0)
+  def to_vector {t α} (m : Matrix (Fin t) Unit α ) : Vector α t := Vector.ofFn (fun i => m i 0)
 
   def column_from_vector {t α} (v : Vector α t) : Matrix (Fin t) (Fin 1) α := Matrix.of (fun i _ => v[i])
 end Matrix
+
+open Matrix
 
 namespace Poseidon
 
@@ -34,212 +36,33 @@ def perm (input_words : Vector F 3): Vector F 3 := Id.run do
   let mut state_words := input_words
   for r in [0:R_f] do
     for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
+      state_words := state_words.set i (state_words.get i + round_constants_field[round_constants_counter]!)
       round_constants_counter := round_constants_counter + 1
     for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! ^ 5)
-    let state_words_vec := Matrix.column_from_vector state_words
-    state_words := (MDS_matrix_field.mul state_words_vec).to_vector
+      state_words := state_words.set i (state_words.get i ^ 5)
+    state_words := (MDS_matrix_field ⬝ state_words.to_column).to_vector
 
   for r in [0:R_P] do
     for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
+      state_words := state_words.set i (state_words.get i + round_constants_field[round_constants_counter]!)
       round_constants_counter := round_constants_counter + 1
-    state_words := state_words.set 0 (state_words[0]! ^ 5)
-    let state_words_vec := Matrix.column_from_vector state_words
-    state_words := (MDS_matrix_field.mul state_words_vec).to_vector
+    state_words := state_words.set 0 (state_words.get 0 ^ 5)
+    state_words := (MDS_matrix_field ⬝ state_words.to_column).to_vector
 
   for r in [0:R_f] do
     for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
+      state_words := state_words.set i (state_words.get i + round_constants_field[round_constants_counter]!)
       round_constants_counter := round_constants_counter + 1
     for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! ^ 5)
-    let state_words_vec := Matrix.column_from_vector state_words
-    state_words := (MDS_matrix_field.mul state_words_vec).to_vector
+      state_words := state_words.set i (state_words.get i ^ 5)
+    state_words := (MDS_matrix_field ⬝ state_words.to_column).to_vector
+
   state_words
 
 theorem test_vector_correct:
   perm vec![0,1,2] = vec![0x115cc0f5e7d690413df64c6b9662e9cf2a3617f2743245519e19607a4417189a, 0x0fca49b798923ab0239de1c9e7a4a9a2210312b6a2f616d18b5a87f9b628ae29, 0x0e7ae82e40091e63cbd4f16a6d16310b3729d4b6e138fcf54110e2867045a30c] := by eq_refl
 
-lemma vector_3_decomp [Inhabited α] (v : Vector α 3): v = vec![v[0]!, v[1]!, v[2]!] := by
-    apply Vector.eq
-    simp
-    cases v; rename_i l p
-    cases l
-    { simp [List.length] at p }
-    {
-        rename_i h t; cases t
-        { simp [List.length] at p }
-        {
-            rename_i h' t'; cases t'
-            { simp [List.length] at p }
-            {
-                rename_i h'' t''; cases t''
-                { simp [getElem] }
-                { simp [List.length] at p }
-            }
-        }
-    }
-
-def full_rounds_step_1 (inp : MProd Nat (Vector F 3)) (num_rounds : Nat): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for r in [0:num_rounds] do
-    for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
-      round_constants_counter := round_constants_counter + 1
-    for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! ^ 5)
-    let state_words_vec := Matrix.column_from_vector state_words
-    state_words := (MDS_matrix_field.mul state_words_vec).to_vector
-  ⟨round_constants_counter, state_words⟩
-
-def full_round_step_1 (inp : MProd Nat (Vector F 3)): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for i in [0:t] do
-    state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
-    round_constants_counter := round_constants_counter + 1
-  for i in [0:t] do
-    state_words := state_words.set i (state_words[i]! ^ 5)
-  let state_words_vec := Matrix.column_from_vector state_words
-  state_words := (MDS_matrix_field.mul state_words_vec).to_vector
-  ⟨round_constants_counter, state_words⟩
-
-def partial_round_step_1 (inp : MProd Nat (Vector F 3)): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for i in [0:t] do
-    state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
-    round_constants_counter := round_constants_counter + 1
-  state_words := state_words.set 0 (state_words[0]! ^ 5)
-  let state_words_vec := Matrix.column_from_vector state_words
-  state_words := (MDS_matrix_field.mul state_words_vec).to_vector
-  ⟨round_constants_counter, state_words⟩
-
-def add_constants_step_1 (inp : MProd Nat (Vector F 3)): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for i in [0:t] do
-    state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
-    round_constants_counter := round_constants_counter + 1
-  ⟨round_constants_counter, state_words⟩
-
-def add_constants_step_2 (inp : MProd Nat (Vector F 3)): MProd Nat (Vector F 3) :=
-  ⟨inp.1 + 3, vec![
-    inp.2[0] + round_constants_field[inp.1]!,
-    inp.2[1] + round_constants_field[inp.1.succ]!,
-    inp.2[2] + round_constants_field[inp.1.succ.succ]!
-  ]⟩
-
-theorem add_constants_step_2_go {inp : MProd Nat (Vector F 3)}: add_constants_step_1 inp = add_constants_step_2 inp := by
-  unfold add_constants_step_1
-  unfold add_constants_step_2
-  simp
-  (
-    split; rename_i rc sw h;
-    have : sw = (MProd.mk rc sw).2 := by rfl
-    rw [this]; clear this;
-    have : rc = (MProd.mk rc sw).1 := by rfl
-    rw [this]; clear this;
-    have : MProd.mk (MProd.mk rc sw).1 sw = MProd.mk rc sw := by rfl
-    rw [this]; clear this;
-    rw [←h]; clear rc sw h;
-  )
-  simp [forIn, Std.Range.forIn, Std.Range.forIn.loop]
-  rw [vector_3_decomp inp.2]
-  rfl
-
-def full_round_step_2 (inp : MProd Nat (Vector F 3)): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  match add_constants_step_1 inp with
-  | ⟨rc, sw⟩ => do
-    round_constants_counter := rc
-    state_words := sw
-  for i in [0:t] do
-    state_words := state_words.set i (state_words[i]! ^ 5)
-  let state_words_vec := Matrix.column_from_vector state_words
-  state_words := (MDS_matrix_field.mul state_words_vec).to_vector
-  ⟨round_constants_counter, state_words⟩
-
-theorem full_round_step_2_go {inp : MProd Nat (Vector F 3)}:
-  full_round_step_1 inp = full_round_step_2 inp := by
-  unfold full_round_step_1
-  unfold full_round_step_2
-  congr
-
-
-def partial_round_step_2 (inp : MProd Nat (Vector F 3)): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  match add_constants_step_1 inp with
-  | ⟨rc, sw⟩ => do
-    round_constants_counter := rc
-    state_words := sw
-  state_words := state_words.set 0 (state_words[0]! ^ 5)
-  let state_words_vec := Matrix.column_from_vector state_words
-  state_words := (MDS_matrix_field.mul state_words_vec).to_vector
-  ⟨round_constants_counter, state_words⟩
-
-theorem partial_round_step_2_go {inp : MProd Nat (Vector F 3)}:
-  partial_round_step_1 inp = partial_round_step_2 inp := by
-  unfold partial_round_step_1
-  unfold partial_round_step_2
-  congr
-
-
-def sbox_all_step_1 (inp : Vector F 3): Id (Vector F 3) := do
-  let mut state_words := inp
-  for i in [0:t] do
-    state_words := state_words.set i (state_words[i]! ^ 5)
-  state_words
-
-def sbox_all_step_2 (inp : Vector F 3): Vector F 3 :=
-  vec![inp[0] ^ 5, inp[1] ^ 5, inp[2] ^ 5]
-
-theorem sbox_all_step_2_go {inp : Vector F 3}:
-  sbox_all_step_1 inp = sbox_all_step_2 inp := by
-  unfold sbox_all_step_1
-  unfold sbox_all_step_2
-  simp [forIn, Std.Range.forIn, Std.Range.forIn.loop]
-  rw [vector_3_decomp inp]
-  rfl
-
-def full_round_step_3 (inp : MProd Nat (Vector F 3)): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  match add_constants_step_1 inp with
-  | ⟨rc, sw⟩ => do
-    round_constants_counter := rc
-    state_words := sw
-  state_words := (← sbox_all_step_1 state_words)
-  let state_words_vec := Matrix.column_from_vector state_words
-  state_words := (MDS_matrix_field.mul state_words_vec).to_vector
-  ⟨round_constants_counter, state_words⟩
-
-theorem full_round_step_3_go {inp : MProd Nat (Vector F 3)}:
-  full_round_step_2 inp = full_round_step_3 inp := by
-  unfold full_round_step_2
-  unfold full_round_step_3
-  simp
-  (
-    split; rename_i rc sw h;
-    have : sw = (MProd.mk rc sw).2 := by rfl
-    rw [this]; clear this;
-    have : rc = (MProd.mk rc sw).1 := by rfl
-    rw [this]; clear this;
-    have : MProd.mk (MProd.mk rc sw).1 sw = MProd.mk rc sw := by rfl
-    rw [this]; clear this;
-    rw [←h]; clear rc sw h;
-  )
-  congr
-
-def mds_matmul (S : Vector F 3) : Vector F 3 :=
-  let smat := Matrix.column_from_vector S
-  let rmat := MDS_matrix_field.mul smat
-  vec![rmat 0 0, rmat 1 0, rmat 2 0]
+def mds_matmul (S : Vector F 3) : Vector F 3 := (MDS_matrix_field ⬝ S.to_column).to_vector
 
 def full_round (S C: Vector F 3) : Vector F 3 :=
   mds_matmul vec![(S[0] + C[0]) ^ 5, (S[1] + C[1]) ^ 5, (S[2] + C[2]) ^ 5]
@@ -247,280 +70,140 @@ def full_round (S C: Vector F 3) : Vector F 3 :=
 def partial_round (S C: Vector F 3) : Vector F 3 :=
   mds_matmul vec![(S[0] + C[0]) ^ 5, S[1] + C[1], S[2] + C[2]]
 
-def full_round_step_4 (const_counter: Nat) (words: Vector F 3): (Vector F 3) :=
-  full_round words vec![
-    round_constants_field[const_counter]!,
-    round_constants_field[const_counter.succ]!,
-    round_constants_field[const_counter.succ.succ]!
-  ]
+def full_rounds (state_words : Vector F 3) (round_constants_counter rounds : ℕ) : Vector F 3 := Id.run do
+  let mut round_constants_counter := round_constants_counter
+  let mut state_words := state_words
 
-theorem full_round_step_4_go {inp : MProd Nat (Vector F 3)}: full_round_step_3 inp = ⟨inp.1.succ.succ.succ, full_round_step_4 inp.1 inp.2⟩ := by
-  unfold full_round_step_3
-  unfold full_round_step_4
-  simp
-  (
-    split; rename_i rc sw h;
-    have : sw = (MProd.mk rc sw).2 := by rfl
-    rw [this]; clear this;
-    have : rc = (MProd.mk rc sw).1 := by rfl
-    rw [this]; clear this;
-    have : MProd.mk (MProd.mk rc sw).1 sw = MProd.mk rc sw := by rfl
-    rw [this]; clear this;
-    rw [←h]; clear rc sw h;
-  )
-  rw [add_constants_step_2_go, sbox_all_step_2_go]
-  rfl
-
-def partial_round_step_3 (const_counter: Nat) (words: Vector F 3): (Vector F 3) :=
-  partial_round words vec![
-    round_constants_field[const_counter]!,
-    round_constants_field[const_counter.succ]!,
-    round_constants_field[const_counter.succ.succ]!
-  ]
-
-theorem partial_round_step_3_go {inp : MProd Nat (Vector F 3)}:
-  partial_round_step_2 inp = ⟨inp.1.succ.succ.succ, partial_round_step_3 inp.1 inp.2⟩ := by
-  unfold partial_round_step_2
-  unfold partial_round_step_3
-  simp
-  rw [add_constants_step_2_go]
-  congr
-
-def full_rounds_step_2 (inp : MProd Nat (Vector F 3)) (num_rounds : Nat): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for r in [0:num_rounds] do
-    match full_round_step_1 ⟨round_constants_counter, state_words⟩ with
-    | ⟨rc, sw⟩ => do
-      round_constants_counter := rc
-      state_words := sw
-  ⟨round_constants_counter, state_words⟩
-
-lemma full_rounds_step_2_go {inp : MProd Nat (Vector F 3)} { num_rounds : Nat}:
-  full_rounds_step_1 inp num_rounds = full_rounds_step_2 inp num_rounds := by
-  unfold full_rounds_step_1
-  unfold full_rounds_step_2
-  simp
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  apply congrArg
-  funext
-  split; rename_i rc sw h;
-  have : sw = (MProd.mk rc sw).2 := by rfl
-  rw [this]; clear this;
-  have : rc = (MProd.mk rc sw).1 := by rfl
-  rw [this]; clear this;
-  have : MProd.mk (MProd.mk rc sw).1 sw = MProd.mk rc sw := by rfl
-  rw [this]; clear this;
-  rw [←h]; clear rc sw h;
-  split; rename_i h; rw [←h]; clear h;
-  apply congrArg
-  unfold full_round_step_1
-  simp
-  split; rename_i rc sw h;
-  have : sw = (MProd.mk rc sw).2 := by rfl
-  rw [this]; clear this;
-  have : rc = (MProd.mk rc sw).1 := by rfl
-  rw [this]; clear this;
-  have : MProd.mk (MProd.mk rc sw).1 sw = MProd.mk rc sw := by rfl
-  rw [this]; clear this;
-  rw [←h];
-
-def full_rounds_step_3 (inp : MProd Nat (Vector F 3)) (num_rounds : Nat): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for r in [0:num_rounds] do
+  for r in [0:rounds] do
     let consts := vec![
       round_constants_field[round_constants_counter]!,
-      round_constants_field[round_constants_counter.succ]!,
-      round_constants_field[round_constants_counter.succ.succ]!
+      round_constants_field[round_constants_counter + 1]!,
+      round_constants_field[round_constants_counter + 2]!
     ]
     state_words := full_round state_words consts
-    round_constants_counter := round_constants_counter.succ.succ.succ
-  ⟨round_constants_counter, state_words⟩
+    round_constants_counter := round_constants_counter + 3
+  state_words
 
-theorem full_rounds_step_3_go (inp : MProd Nat (Vector F 3)) (num_rounds : Nat):
-  full_rounds_step_2 inp num_rounds = full_rounds_step_3 inp num_rounds := by
-  unfold full_rounds_step_2
-  unfold full_rounds_step_3
-  simp
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  apply congrArg
-  funext
-  rw [full_round_step_2_go, full_round_step_3_go, full_round_step_4_go]
-  congr
+def partial_rounds (state_words : Vector F 3) (round_constants_counter rounds : ℕ) : Vector F 3 := Id.run do
+  let mut round_constants_counter := round_constants_counter
+  let mut state_words := state_words
 
-def partial_rounds_step_1 (inp : MProd Nat (Vector F 3)) (num_rounds : Nat): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for r in [0:num_rounds] do
-    for i in [0:t] do
-      state_words := state_words.set i (state_words[i]! + round_constants_field[round_constants_counter]!)
-      round_constants_counter := round_constants_counter + 1
-    state_words := state_words.set 0 (state_words[0]! ^ 5)
-    let state_words_vec := Matrix.column_from_vector state_words
-    state_words := (MDS_matrix_field.mul state_words_vec).to_vector
-  ⟨round_constants_counter, state_words⟩
-
-def partial_rounds_step_2 (inp : MProd Nat (Vector F 3)) (num_rounds : Nat): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for r in [0:num_rounds] do
-    match partial_round_step_1 ⟨round_constants_counter, state_words⟩ with
-    | ⟨rc, sw⟩ => do
-      round_constants_counter := rc
-      state_words := sw
-  ⟨round_constants_counter, state_words⟩
-
-theorem partial_rounds_step_2_go {inp: MProd Nat (Vector F 3)} {num_rounds: Nat}:
-  partial_rounds_step_1 inp num_rounds = partial_rounds_step_2 inp num_rounds := by
-  unfold partial_rounds_step_1
-  unfold partial_rounds_step_2
-  simp
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  congr
-
-def partial_rounds_step_3 (inp : MProd Nat (Vector F 3)) (num_rounds : Nat): Id (MProd Nat (Vector F 3)) := do
-  let mut round_constants_counter := inp.1
-  let mut state_words := inp.2
-  for r in [0:num_rounds] do
+  for r in [0:rounds] do
     let consts := vec![
       round_constants_field[round_constants_counter]!,
-      round_constants_field[round_constants_counter.succ]!,
-      round_constants_field[round_constants_counter.succ.succ]!
+      round_constants_field[round_constants_counter + 1]!,
+      round_constants_field[round_constants_counter + 2]!
     ]
     state_words := partial_round state_words consts
-    round_constants_counter := round_constants_counter.succ.succ.succ
-  ⟨round_constants_counter, state_words⟩
+    round_constants_counter := round_constants_counter + 3
+  state_words
 
-theorem partial_rounds_step_3_go (inp : MProd Nat (Vector F 3)) (num_rounds : Nat):
-  partial_rounds_step_2 inp num_rounds = partial_rounds_step_3 inp num_rounds := by
-  unfold partial_rounds_step_2
-  unfold partial_rounds_step_3
-  simp
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  apply congrArg
-  funext
-  rw [partial_round_step_2_go, partial_round_step_3_go]
-  congr
-
-
-def step_1 (input_words : Vector F 3): Vector F 3 := Id.run do
-  let R_f := R_F / 2
+def step_2 (input_words : Vector F 3): Vector F 3 := Id.run do
+  let R_f := Poseidon.R_F / 2
   let mut round_constants_counter := 0
   let mut state_words := input_words
-  match full_rounds_step_1 (MProd.mk round_constants_counter state_words) R_f with
-  | ⟨rc, sw⟩ => do
-    round_constants_counter := rc
-    state_words := sw
 
-  match partial_rounds_step_1 (MProd.mk round_constants_counter state_words) R_P with
-  | ⟨rc, sw⟩ => do
-    round_constants_counter := rc
-    state_words := sw
+  state_words := full_rounds state_words round_constants_counter R_f
+  round_constants_counter := 12
 
-  match full_rounds_step_1 (MProd.mk round_constants_counter state_words) R_f with
-  | ⟨rc, sw⟩ => do
-    round_constants_counter := rc
-    state_words := sw
+  state_words := partial_rounds state_words round_constants_counter R_P
+  round_constants_counter := 183
+
+  state_words := full_rounds state_words round_constants_counter R_f
+  round_constants_counter := 195
 
   state_words
 
-lemma step1_go {input_words : Vector F 3}: perm input_words = step_1 input_words := by
+private lemma step_2_full_rounds_loop {start : ℕ}:
+  (fun (i : ℕ) (r : Vector F 3) =>
+    ForInStep.yield
+      (to_vector
+        (MDS_matrix_field ⬝
+          Vector.to_column
+            (Std.Range.forIn (m := Id) { start := 0, stop := 3, step := 1 }
+              (Std.Range.forIn (m := Id) { start := 0, stop := 3, step := 1 } r fun i_1 (r : Vector F 3) =>
+                ForInStep.yield (Vector.set r i_1 (Vector.get r i_1 + round_constants_field[start + i * 3 + i_1]!)))
+              fun i (r : Vector F 3) => ForInStep.yield (Vector.set r i (Vector.get r i ^ 5)))))) =
+  fun (i : ℕ) (r : Vector F 3) =>
+  ForInStep.yield
+    (full_round r
+      (round_constants_field[start + i * 3]! ::ᵥ
+        round_constants_field[start + i * 3 + 1]! ::ᵥ round_constants_field[start + i * 3 + 2]! ::ᵥ Vector.nil)) := by
+  funext xi v
+  apply congrArg
+  unfold full_round
+  unfold mds_matmul
+  apply congrArg
+  apply congrArg
+  apply congrArg
+  simp
+  rw [Vector.setLoop_def (f := fun i x => x + round_constants_field[start + xi * 3 + i]!) (n:=2)]
+  rw [Vector.setLoop_def (f := fun _ x => x ^ 5)]
+  simp [Vector.setLoop_mapIdx, Vector.mapIdx_compose, getElem]
+  rw [←v.cons_head_tail, Vector.mapIdx_cons]
+  apply congrArg₂
+  {rfl}
+  rw [←v.tail.cons_head_tail, Vector.mapIdx_cons]
+  apply congrArg₂
+  {rfl}
+  rw [←v.tail.tail.cons_head_tail, Vector.mapIdx_cons]
+  apply congrArg₂
+  {rfl}
+  simp
+
+private lemma step_2_partial_rounds_loop:
+  (fun i (r : Vector F 3) =>
+    ForInStep.yield
+      (to_vector
+        (MDS_matrix_field ⬝
+          Vector.to_column
+            (Vector.set
+              (Std.Range.forIn (m := Id) { start := 0, stop := 3, step := 1 } r fun i_1 (r : Vector F 3) =>
+                ForInStep.yield (Vector.set r i_1 (r.get i_1 + round_constants_field[R_F / 2 * 3 + i * 3 + i_1]!)))
+              0
+              (Vector.head
+                  (Std.Range.forIn (m := Id) { start := 0, stop := 3, step := 1 } r fun i_1 (r : Vector F 3) =>
+                    ForInStep.yield
+                      (Vector.set r (↑i_1) (r.get i_1 + round_constants_field[R_F / 2 * 3 + i * 3 + i_1]!))) ^
+                5))))) =
+  fun i r =>
+  ForInStep.yield
+    (partial_round r
+      (round_constants_field[12 + i * 3]! ::ᵥ
+        round_constants_field[12 + i * 3 + 1]! ::ᵥ round_constants_field[12 + i * 3 + 2]! ::ᵥ Vector.nil)) := by
+  funext xi v
+  rw [Vector.setLoop_def (f := fun i x => x + round_constants_field[R_F / 2 * 3 + xi * 3 + i]!) (n:=2)]
+  unfold partial_round
+  unfold mds_matmul
+  simp [Vector.setLoop_mapIdx, Vector.mapIdx_compose, getElem, R_F]
+  rw [←v.cons_head_tail, Vector.mapIdx_cons, Vector.head_cons, Vector.set_cons_0]
+  apply congrArg
+  apply congrArg
+  apply congrArg
+  apply congrArg
+  apply congrArg₂
+  {rfl}
+  rw [←v.tail.cons_head_tail, Vector.mapIdx_cons]
+  apply congrArg₂
+  {rfl}
+  rw [←v.tail.tail.cons_head_tail, Vector.mapIdx_cons]
+  apply congrArg₂
+  {rfl}
+  {simp}
+
+def step_2_go (input_words : Vector F 3):
+  perm input_words = step_2 input_words := by
   unfold perm
-  unfold step_1
-  simp [Id.run]
-  unfold full_rounds_step_1
-  simp
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  (
-    split
-    rename_i rc sw h
-    have : sw = (MProd.mk rc sw).2 := by rfl
-    rw [this, ←h]
-    clear this rc sw h
-  )
-  split; rename_i h; rw [←h]; clear h;
-  apply congrArg
-  apply congr
-  {
-    apply congrArg
-    unfold partial_rounds_step_1
-    simp
-    split; rename_i h; rw [←h]; clear h;
-    have un_project : ∀ {α β} {a : MProd α β}, MProd.mk a.fst a.snd = a := by intro α β a; cases a; rfl
-    rw [un_project]
-    apply congr
-    {
-      apply congrArg
-      rw [un_project]
-      split; rename_i h; rw [←h]
-    }
-    { rfl }
-  }
-  { rfl }
-
-
-def readable_perm (input_words : Vector F 3): Vector F 3 := Id.run do
-  let R_f := R_F / 2
-  let mut round_constants_counter := 0
-  let mut state_words := input_words
-  for r in [0:R_f] do
-    let consts := vec![
-      round_constants_field[round_constants_counter]!,
-      round_constants_field[round_constants_counter.succ]!,
-      round_constants_field[round_constants_counter.succ.succ]!
-    ]
-    state_words := full_round state_words consts
-    round_constants_counter := round_constants_counter.succ.succ.succ
-
-  for r in [0:R_P] do
-    let consts := vec![
-      round_constants_field[round_constants_counter]!,
-      round_constants_field[round_constants_counter.succ]!,
-      round_constants_field[round_constants_counter.succ.succ]!
-    ]
-    state_words := partial_round state_words consts
-    round_constants_counter := round_constants_counter.succ.succ.succ
-
-  for r in [0:R_f] do
-    let consts := vec![
-      round_constants_field[round_constants_counter]!,
-      round_constants_field[round_constants_counter.succ]!,
-      round_constants_field[round_constants_counter.succ.succ]!
-    ]
-    state_words := full_round state_words consts
-    round_constants_counter := round_constants_counter.succ.succ.succ
-  state_words
-
-theorem readable_perm_go (input_words : Vector F 3): perm input_words = readable_perm input_words := by
-  rw [step1_go]
-  unfold step_1
-  unfold readable_perm
-  simp [Id.run]
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  (
-    split
-    rename_i rc sw h
-    have : sw = (MProd.mk rc sw).2 := by rfl
-    rw [this, ←h]
-    clear this rc sw h
-  )
-  rw [full_rounds_step_2_go, full_rounds_step_3_go]
-  rw [full_rounds_step_2_go, full_rounds_step_3_go]
-  rw [partial_rounds_step_2_go, partial_rounds_step_3_go]
-  unfold full_rounds_step_3
-  unfold partial_rounds_step_3
-  simp
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
-  split; rename_i h; rw [←h]; clear h;
+  unfold step_2
+  unfold full_rounds
+  unfold partial_rounds
+  simp [Id.run, forIn, t]
+  simp [Std.Range.counter_elide_2]
   congr
-
-
+  {
+    have h := step_2_full_rounds_loop (start := 0)
+    simp at h
+    assumption
+  }
+  { rw [step_2_partial_rounds_loop] }
+  { rw [step_2_full_rounds_loop]; rfl }

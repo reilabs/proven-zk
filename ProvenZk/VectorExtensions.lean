@@ -1,5 +1,6 @@
 import Mathlib
 import ProvenZk.Ext.Range
+import ProvenZk.Ext.List
 
 namespace Vector
 
@@ -15,12 +16,38 @@ def listSetLoopX (l : List α) (m : ℕ) (f : ℕ -> α -> α): List α := Id.ru
 
 def listSetLoop (l : List α) (f : ℕ -> α -> α): List α := listSetLoopX l l.length f
 
-def mapIdx (v : Vector α n) (f : ℕ -> α -> β): Vector β n := ⟨v.toList.mapIdx f, by simp⟩
+def mapIdx (v : Vector α n) (f : Nat -> α -> β): Vector β n := ⟨v.toList.mapIdx f, by simp⟩
+
+def to_column (v : Vector α n) : Matrix (Fin n) Unit α := Matrix.of (fun i _ => v.get i)
 
 @[simp]
 theorem toList_mapIdx {v : Vector α n} {f : ℕ -> α -> β}:
   (v.mapIdx f).toList = v.toList.mapIdx f := by
   simp [mapIdx]
+
+@[simp]
+theorem mapIdx_cons {α β n} (f : ℕ -> α -> β) (x : α) (v : Vector α n):
+  (cons x v).mapIdx f = cons (f 0 x) (v.mapIdx (fun i x => f (i + 1) x)) := by
+  apply Vector.eq
+  simp [mapIdx, toList_cons]
+
+@[simp]
+theorem mapIdx_nil {α β} (f : ℕ -> α -> β):
+  (nil : Vector α 0).mapIdx f = nil := by
+  apply Vector.eq
+  simp
+
+@[simp]
+theorem set_cons_0 {α n} (v : Vector α n) (x y: α):
+  (cons y v).set 0 x = cons x v := by
+  apply Vector.eq
+  simp
+  rfl
+
+theorem mapIdx_compose {α β γ : Type} {n} (f : ℕ → α → β) (g : ℕ → β → γ) (v : Vector α n):
+  mapIdx (mapIdx v f) g = mapIdx v (fun i x => g i (f i x)) := by
+  apply Vector.eq
+  simp [List.mapIdx_compose]
 
 def setLoop (v : Vector α n) (f : ℕ -> α -> α): Vector α n := match n with
   | Nat.zero => v
@@ -29,6 +56,10 @@ def setLoop (v : Vector α n) (f : ℕ -> α -> α): Vector α n := match n with
     for i in [0:n] do
       v := v.set i (f i (v.get i))
     v
+
+theorem setLoop_def {n : ℕ} (v : Vector α n.succ) (f : ℕ -> α -> α):
+  Std.Range.forIn (m := Id) [0:n.succ] v (fun i r => ForInStep.yield (r.set i (f i (r.get i)))) = v.setLoop f := by
+  sorry
 
 @[simp]
 lemma toList_setLoop {α n} {v : Vector α n} {f : ℕ -> α -> α}:
@@ -99,7 +130,7 @@ lemma listMapIdx_setLoopApp (l1 l2 : List α) (f : ℕ -> α -> α):
   induction l1 using List.reverseRecOn generalizing l2 with
   | H0 => simp [listSetLoopX, Id.run, forIn, Std.Range.forIn, Std.Range.forIn.loop]
   | H1 xs x ih =>
-    simp [listSetLoopX, forIn]
+    simp [listSetLoopX, forIn, Id.run]
     let g (i : ℕ) (l : List α) := match h:l.length with
     | Nat.zero => l
     | Nat.succ _ => l.set i (f i (l.get (Fin.ofNat' i (by linarith))))
@@ -107,11 +138,11 @@ lemma listMapIdx_setLoopApp (l1 l2 : List α) (f : ℕ -> α -> α):
     | Nat.zero => l
     | Nat.succ _ => l.set i (f i (l.get (Fin.ofNat' i (by linarith)))))) = (fun i r => ForInStep.yield (g i r)) := by rfl
     rw [this]
-    conv => rhs; enter [1,1,2]; rw [←Nat.zero_add (_ + _)]
+    conv => rhs; enter [1, 2]; rw [←Nat.zero_add (_ + _)]
     rw [Std.Range.forIn_stopSucc]
     simp
     clear g this
-    simp [listSetLoopX, forIn] at ih
+    simp [listSetLoopX, forIn, Id.run] at ih
     rw [←ih, ←listMapIdx_appendOne]
     have : List.length (List.mapIdx f xs ++ x :: l2) = Nat.succ (xs.length + l2.length):= by
       simp; rw [Nat.add_succ]
