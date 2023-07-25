@@ -1,4 +1,4 @@
-import ProvenZk.VectorExtensions
+import ProvenZk.Ext.Vector
 import ProvenZk.Hash
 
 inductive Dir : Type
@@ -64,38 +64,37 @@ def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proo
       | Dir.right => H vec![pitem, recover']
 
 -- Same proof and path imply same item
-theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2) 
+theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2)
   (ix : Vector Dir depth) (proof : Vector F depth) (item₁ : F) (item₂ : F)
   [Fact (perfect_hash H)]
   :
   (MerkleTree.recover H ix proof item₁ = MerkleTree.recover H ix proof item₂) ↔ (item₁ = item₂) := by
   apply Iff.intro
-  case mp => {
+  case mp =>
     induction depth with
-    | zero => {
+    | zero =>
       intro h
       unfold recover at h
       assumption
-    }
-    | succ _ ih => {
+    | succ _ ih =>
       intro h
       unfold recover at h
       split at h <;> {
               simp at h
-              have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
-              simp at inps_same
+              have inps_same := Fact.elim (inferInstance : Fact (perfect_hash H)) h
+              have := congrArg Vector.head inps_same
+              have := congrArg (Vector.head ∘ Vector.tail) inps_same
               apply ih
               assumption
       }
-    }
-  }
-  intro h
-  rw [h]
+  case mpr =>
+    intro h
+    rw [h]
 
-theorem same_root_same_proof {depth : Nat} {F: Type} (H : Hash F 2) 
+theorem same_root_same_proof {depth : Nat} {F: Type} (H : Hash F 2)
     (ix : Vector Dir depth)
     (proof₁ : Vector F depth) (proof₂ : Vector F depth)
-    (item₁ : F) (item₂ : F) 
+    (item₁ : F) (item₂ : F)
     (root₁ : F) (root₂ : F)
     :
     (MerkleTree.recover H ix proof₁ item₁ = root₁ ↔ MerkleTree.recover H ix proof₂ item₂ = root₂) ↔ (item₁ = item₂ ∧ root₁ = root₂) := by
@@ -142,8 +141,8 @@ theorem recover_tail_reverse_equals_recover
   | succ _ ih =>
     rw [←ix.cons_head_tail,
         ←proof.cons_head_tail,
-        Vector.reverse_cons_snoc,
-        Vector.reverse_cons_snoc,
+        Vector.reverse_cons,
+        Vector.reverse_cons,
         recover_tail_snoc]
     unfold recover
     split <;> simp [*]
@@ -208,9 +207,9 @@ theorem proof_ceritfies_item
     simp [item_at, tree_for, left, right]
     split <;> {
       simp [recover, root, *] at h
-      have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
-      simp at inps_same
-      cases inps_same
+      have inps_same := Fact.elim (inferInstance : Fact (perfect_hash H)) h
+      have := congrArg Vector.head inps_same
+      have := congrArg (Vector.head ∘ Vector.tail) inps_same
       apply ih
       assumption
     }
@@ -234,9 +233,9 @@ theorem proof_insert_invariant
     simp [set]
     split <;> {
       simp [root, recover, *] at h
-      have inps_same := Vector.elems_eq (Fact.elim (inferInstance : Fact (perfect_hash H)) h)
-      simp at inps_same
-      cases inps_same
+      have inps_same := Fact.elim (inferInstance : Fact (perfect_hash H)) h
+      have := congrArg Vector.head inps_same
+      have := congrArg (Vector.head ∘ Vector.tail) inps_same
       simp [left, right, root, recover, *]
       congr
       apply ih
