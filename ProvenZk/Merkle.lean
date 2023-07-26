@@ -81,9 +81,8 @@ theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2)
       unfold recover at h
       split at h <;> {
               simp at h
-              have inps_same := Fact.elim (inferInstance : Fact (perfect_hash H)) h
-              have := congrArg Vector.head inps_same
-              have := congrArg (Vector.head ∘ Vector.tail) inps_same
+              have := congrArg Vector.head h
+              have := congrArg (Vector.head ∘ Vector.tail) h
               apply ih
               assumption
       }
@@ -206,11 +205,9 @@ theorem proof_ceritfies_item
     cases tree
     simp [item_at, tree_for, left, right]
     split <;> {
-      simp [recover, root, *] at h
-      have inps_same := Fact.elim (inferInstance : Fact (perfect_hash H)) h
-      have := congrArg Vector.head inps_same
-      have := congrArg (Vector.head ∘ Vector.tail) inps_same
-      apply ih
+      simp [recover, root, *, Vector.eq_cons_iff] at h
+      cases h
+      apply ih (proof := proof.tail)
       assumption
     }
 
@@ -232,14 +229,11 @@ theorem proof_insert_invariant
     cases tree
     simp [set]
     split <;> {
-      simp [root, recover, *] at h
-      have inps_same := Fact.elim (inferInstance : Fact (perfect_hash H)) h
-      have := congrArg Vector.head inps_same
-      have := congrArg (Vector.head ∘ Vector.tail) inps_same
+      simp [root, recover, *, Vector.eq_cons_iff] at h
       simp [left, right, root, recover, *]
       congr
       apply ih
-      assumption
+      simp [*]
     }
 
 end MerkleTree
