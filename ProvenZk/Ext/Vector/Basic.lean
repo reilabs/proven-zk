@@ -28,6 +28,37 @@ theorem mapIdx_compose {α β γ : Type} {n} (f : ℕ → α → β) (g : ℕ �
   apply Vector.eq
   simp [List.mapIdx_compose]
 
+def mapIdx' (v : Vector α n) (f : Fin n -> α -> β): Vector β n := match n with
+  | Nat.zero => nil
+  | Nat.succ _ =>
+    let h := f 0 v.head
+    let t := v.tail.mapIdx' (fun i x => f (Fin.succ i) x)
+    cons h t
+
+theorem mapIdx'_mapIdx (v : Vector α n) (f : Nat -> α -> β):
+  v.mapIdx' (fun i x => f i x) = v.mapIdx f := by
+  induction n generalizing f with
+  | zero => simp
+  | succ n ih =>
+    rw [←Vector.cons_head_tail v]
+    rw [mapIdx_cons]
+    unfold mapIdx'
+    simp
+    congr
+    rw [←ih]
+    rfl
+
+theorem mapIdx_mod (v: Vector α n) (f: ℕ -> α -> β): v.mapIdx f = v.mapIdx (fun i x => f (i % n) x) := by
+  rw [←mapIdx'_mapIdx, ←mapIdx'_mapIdx]
+  congr
+  funext i _
+  congr
+  cases i
+  simp
+  apply Eq.symm
+  apply Nat.mod_eq_of_lt
+  assumption
+
 @[simp]
 theorem set_cons_0 {α n} (v : Vector α n) (x y: α):
   (cons y v).set 0 x = cons x v := by
@@ -69,6 +100,9 @@ macro_rules
 
 instance : GetElem (Vector a l) (Nat) a (fun _ i => i < l) where
   getElem xs i h := xs.toList.get ⟨i, by rw [Vector.toList_length]; exact h⟩
+
+theorem getElem_get {v : Vector α n} {i : Nat} {h : i < n} :  v[i] = v.get ⟨i, h⟩ := by
+  rfl
 
 def to_column (v : Vector α n) : Matrix (Fin n) Unit α := Matrix.of (fun i _ => v.get i)
 
