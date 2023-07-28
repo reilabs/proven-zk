@@ -98,12 +98,6 @@ macro_rules
   | `(vec![$x]) => `(cons $x nil)
   | `(vec![$x, $xs:term,*]) => `(cons $x (vec![$xs,*]))
 
-instance : GetElem (Vector a l) (Nat) a (fun _ i => i < l) where
-  getElem xs i h := xs.toList.get ⟨i, by rw [Vector.toList_length]; exact h⟩
-
-theorem getElem_get {v : Vector α n} {i : Nat} {h : i < n} :  v[i] = v.get ⟨i, h⟩ := by
-  rfl
-
 def to_column (v : Vector α n) : Matrix (Fin n) Unit α := Matrix.of (fun i _ => v.get i)
 
 end Vector
