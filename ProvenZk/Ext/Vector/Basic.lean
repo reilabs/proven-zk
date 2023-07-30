@@ -92,6 +92,10 @@ theorem head_snoc {T n} (v: Vector T (Nat.succ n)) (x: T): head (snoc v x) = hea
   . contradiction
   . simp [snoc, head, append]
 
+theorem map_reverse {α β n} (f : α -> β) (v : Vector α n) : (reverse v).map f = reverse (v.map f) := by
+  apply Vector.eq
+  simp [toList_reverse, List.map_reverse]
+
 syntax (priority := high) "vec![" term,* "]" : term
 macro_rules
   | `(vec![]) => `(nil)

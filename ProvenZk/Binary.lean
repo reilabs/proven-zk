@@ -75,10 +75,16 @@ def zmod_to_bit' {n} (x : ZMod n) : Option Bit := match ZMod.val x with
   | 1 => Option.some Bit.one
   | Nat.succ (Nat.succ _) => Option.none
 
+@[reducible]
 def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
 
 def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
-  (List.foldr (fun a r => is_bit a ∧ r) true (Vector.toList x))
+  (List.foldr (fun a r => is_bit a ∧ r) True (Vector.toList x))
+
+theorem is_vector_binary_cons {a : ZMod n} {vec : Vector (ZMod n) d}:
+  is_vector_binary (a ::ᵥ vec) ↔ is_bit a ∧ is_vector_binary vec := by
+  unfold is_vector_binary
+  conv => lhs; unfold List.foldr; simp
 
 def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
   Vector.map nat_to_bit (Vector.map ZMod.val a)
