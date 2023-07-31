@@ -15,27 +15,35 @@ def swap : Dir -> Dir
 instance : Inhabited Dir where
   default := left
 
+def toNat : Dir -> Nat := fun b => match b with
+  | Dir.left => 0
+  | Dir.right => 1
+
+def toZMod {n} : Dir -> ZMod n := fun b => match b with
+  | Dir.left => 0
+  | Dir.right => 1
+
 def nat_to_dir : Nat -> Dir
   | 0 => Dir.left
   | 1 => Dir.right
   | Nat.succ (Nat.succ _) => panic "Dir can be 0 or 1"
+
+end Dir
 
 def create_dir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Vector Dir depth :=
   Vector.map Dir.nat_to_dir (Vector.map ZMod.val ix)
 
 @[simp]
 lemma create_dir_vec_reverse {n} {depth} (ix : Vector (ZMod n) depth) :
-  Dir.create_dir_vec ix.reverse = (Dir.create_dir_vec ix).reverse := by
-  simp [Dir.create_dir_vec]
+  create_dir_vec ix.reverse = (create_dir_vec ix).reverse := by
+  simp [create_dir_vec]
   apply Vector.eq
   simp [Vector.toList_reverse, List.map_reverse]
 
 @[simp]
 lemma create_dir_vec_cons {n} {ix : ZMod n} {ixes: Vector (ZMod n) d} :
-  Dir.create_dir_vec (ix ::ᵥ ixes) = Dir.nat_to_dir ix.val ::ᵥ Dir.create_dir_vec ixes := by
-  simp [Dir.create_dir_vec]
-
-end Dir
+  create_dir_vec (ix ::ᵥ ixes) = Dir.nat_to_dir ix.val ::ᵥ create_dir_vec ixes := by
+  simp [create_dir_vec]
 
 inductive MerkleTree (F: Type) (H : Hash F 2) : Nat -> Type
 | leaf : F  -> MerkleTree F H 0
