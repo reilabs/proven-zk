@@ -1,4 +1,5 @@
 import Mathlib
+import ProvenZk.Binary
 import ProvenZk.Ext.Range
 import ProvenZk.Ext.List
 

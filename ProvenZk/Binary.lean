@@ -1,5 +1,6 @@
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Bitvec.Defs
+import ProvenZk.Ext.List
 
 inductive Bit : Type where
   | zero : Bit
@@ -80,6 +81,14 @@ def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
 
 def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
   (List.foldr (fun a r => is_bit a ∧ r) True (Vector.toList x))
+
+@[simp]
+lemma is_vector_binary_reverse {depth} (ix : Vector (ZMod n) depth):
+  is_vector_binary ix.reverse ↔ is_vector_binary ix := by
+  simp only [is_vector_binary, Vector.toList_reverse]
+  rw [List.foldr_reverse_assoc]
+  { simp }
+  { intros; simp; tauto }
 
 theorem is_vector_binary_cons {a : ZMod n} {vec : Vector (ZMod n) d}:
   is_vector_binary (a ::ᵥ vec) ↔ is_bit a ∧ is_vector_binary vec := by
