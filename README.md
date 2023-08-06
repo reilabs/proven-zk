@@ -64,8 +64,8 @@ with the formal verification of circuits. These are as follows:
 - `import ProvenZK.Hash`: The definition of the
   [perfect hash](https://en.wikipedia.org/wiki/Perfect_hash_function) to be used
   for the purposes of formal verification.
-- `import ProvenZK.Merkle`: The definition of the
-  [merkle tree](https://en.wikipedia.org/wiki/Merkle_tree) and associated
+- `import ProvenZK.Merkle`: The definition of `Dir` type and
+  [merkle tree](https://en.wikipedia.org/wiki/Merkle_tree) with
   theorems that assist in the formal verification of circuits working with this
   data type.
 

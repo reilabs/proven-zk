@@ -3,6 +3,9 @@ import Mathlib.Data.ZMod.Basic
 
 import ProvenZk.Binary
 
+-- These operations are used by [reilabs/gnark-lean-extractor]
+-- See [extractor.go](https://github.com/reilabs/gnark-lean-extractor/blob/main/extractor/extractor.go)
+-- and [api.go](https://github.com/Consensys/gnark/blob/master/frontend/api.go) for more details
 namespace Gates
 variable {N : Nat}
 variable [Fact (Nat.Prime N)]
@@ -32,6 +35,8 @@ def is_zero (a out: ZMod N): Prop := (a = 0 ∧ out = 1) ∨ (a != 0 ∧ out = 0
 def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
 def le (a b : ZMod N): Prop := ZMod.val a <= ZMod.val b
+-- to_binary argument out is Vector Bit d, but represented as Vector (ZMod N) d because circuits only use (ZMod N) numbers
 def to_binary (a : ZMod N) (n : Nat) (out : Vector (ZMod N) n): Prop := (recover_binary_zmod' out : ZMod N) = a ∧ is_vector_binary out
+-- from_binary argument a is Vector Bit d, but represented as Vector (ZMod N) d because circuits only use (ZMod N) numbers
 def from_binary {d} (a : Vector (ZMod N) d) (out : ZMod N): Prop := (recover_binary_zmod' a : ZMod N) = out
 end Gates
