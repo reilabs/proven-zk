@@ -5,8 +5,10 @@ import ProvenZk.Ext.List
 
 namespace Vector
 
--- mapIdx creates Vector.mapIdx function because mapIdx is only defined for lists in mathlib4.
--- Useful mapIdx theorems follow to help proofs with Vector.mapIdx
+/-!
+mapIdx creates Vector.mapIdx function because mapIdx is only defined for lists in mathlib4.
+Useful mapIdx theorems follow to help proofs with Vector.mapIdx
+-/
 def mapIdx (v : Vector α n) (f : Nat -> α -> β): Vector β n := ⟨v.toList.mapIdx f, by simp⟩
 
 @[simp]
@@ -62,8 +64,10 @@ theorem mapIdx_mod (v: Vector α n) (f: ℕ -> α -> β): v.mapIdx f = v.mapIdx 
   apply Nat.mod_eq_of_lt
   assumption
 
--- set_cons_0 proves that adding element y at the head of the vector and replacing it with x
--- is identical to adding element x at the head of the vector.
+/-!
+set_cons_0 proves that adding element y at the head of the vector and replacing it with x
+is identical to adding element x at the head of the vector.
+-/
 @[simp]
 theorem set_cons_0 {α n} (v : Vector α n) (x y: α):
   (cons y v).set 0 x = cons x v := by

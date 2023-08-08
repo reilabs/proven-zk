@@ -4,10 +4,12 @@ import Mathlib
 namespace Std
 namespace Range
 
--- Fuel refers to [Std.Range.forIn](https://github.com/leanprover/lean4/blob/master/src/Init/Data/Range.lean#L23) for termination of loops
+/-!
+Fuel refers to [Std.Range.forIn](https://github.com/leanprover/lean4/blob/master/src/Init/Data/Range.lean#L23) for termination of loops
 
--- fuel_doesnt_matter shows that in a loop, fuel1 and fuel2 don't matter as long as they are greater or equal than d
--- which is the end index
+fuel_doesnt_matter shows that in a loop, fuel1 and fuel2 don't matter as long as they are greater or equal than d
+which is the end index
+-/
 private lemma fuel_doesnt_matter [Monad m] {start d : Nat} {init : α} {f : Nat -> α -> m (ForInStep α)} (fuel1 fuel2 : Nat):
   (fuel1 >= d) →
   (fuel2 >= d) →

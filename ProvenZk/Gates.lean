@@ -3,9 +3,11 @@ import Mathlib.Data.ZMod.Basic
 
 import ProvenZk.Binary
 
--- These operations are used by [reilabs/gnark-lean-extractor]
--- See [extractor.go](https://github.com/reilabs/gnark-lean-extractor/blob/main/extractor/extractor.go)
--- and [api.go](https://github.com/Consensys/gnark/blob/master/frontend/api.go) for more details
+/-!
+These operations are used by [reilabs/gnark-lean-extractor]
+See [extractor.go](https://github.com/reilabs/gnark-lean-extractor/blob/main/extractor/extractor.go)
+and [api.go](https://github.com/Consensys/gnark/blob/master/frontend/api.go) for more details
+-/
 namespace Gates
 variable {N : Nat}
 variable [Fact (Nat.Prime N)]

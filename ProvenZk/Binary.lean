@@ -39,9 +39,11 @@ theorem double_succ_ne_zero (n : Nat) : Nat.succ (Nat.succ n) ≠ 0 := by
 theorem double_succ_ne_one (n : Nat) : Nat.succ (Nat.succ n) ≠ 1 := by
   simp
 
--- nat_to_bit_condition uses an hypothesis to convert from Nat to Bit.
--- The advantage is that the match statement doesn't require a result
--- for x >= 2 because bits can be only 0 or 1.
+/-!
+nat_to_bit_condition uses an hypothesis to convert from Nat to Bit.
+The advantage is that the match statement doesn't require a result
+for x >= 2 because bits can be only 0 or 1.
+-/
 def nat_to_bit_condition (x : Nat) {h : x = 0 ∨ x = 1} : Bit := match p : x with
   | 0 => Bit.zero
   | 1 => Bit.one
@@ -64,9 +66,11 @@ def nat_to_bit (x : Nat) : Bit := match x with
   | 1 => Bit.one
   | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
 
--- nat_to_bit_option encapsulates Bit inside Option.
--- The advantage is that for x >= 2, Option is None because
--- Bits can only be 0 or 1
+/-!
+nat_to_bit_option encapsulates Bit inside Option.
+The advantage is that for x >= 2, Option is None because
+Bits can only be 0 or 1
+-/
 def nat_to_bit_option (x : Nat) : Option Bit := match x with
   | 0 => Option.some Bit.zero
   | 1 => Option.some Bit.one
@@ -88,8 +92,10 @@ def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
 def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
   (List.foldr (fun a r => is_bit a ∧ r) True (Vector.toList x))
 
--- is_vector_binary_reverse proves that the operation is_vector_binary is
--- associative
+/-!
+is_vector_binary_reverse proves that the operation is_vector_binary is
+associative
+-/
 @[simp]
 lemma is_vector_binary_reverse {depth} (ix : Vector (ZMod n) depth):
   is_vector_binary ix.reverse ↔ is_vector_binary ix := by
@@ -121,8 +127,10 @@ def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d wit
 
 def is_binary_of {n d} (inp : ZMod n) (rep : Vector Bit d): Prop := inp = recover_binary_zmod rep
 
--- nat_n_bits takes two Nat: a and difits. It converts a to a (Vector Bit) with LSB at index 0.
--- Then takes the digits from the Vector and converts the result to Nat
+/-!
+nat_n_bits takes two Nat: a and difits. It converts a to a (Vector Bit) with LSB at index 0.
+Then takes the digits from the Vector and converts the result to Nat
+-/
 def nat_n_bits (a : Nat) (digits : Nat) : Nat :=
   Bitvec.bitsToNat (List.reverse (List.take digits (List.reverse (Nat.bits a))))
 
@@ -144,7 +152,7 @@ lemma parity_bit_unique (a b : Bit) (c d : Nat) : a + 2 * c = b + 2 * d -> a = b
   . rw [add_comm, eq_comm] at h; apply even_ne_odd _ _ h
   . assumption
 
--- Uniquiness property of binary numbers
+/-- Uniquiness property of binary numbers -/
 theorem binary_nat_unique {d} (rep1 rep2 : Vector Bit d): recover_binary_nat rep1 = recover_binary_nat rep2 -> rep1 = rep2 := by
   intro h
   induction d with
@@ -183,7 +191,6 @@ theorem binary_nat_zmod_equiv {n d} (rep : Vector Bit d):
   induction d with
   | zero => simp [recover_binary_nat, recover_binary_zmod]
   | succ d' ih =>
-    -- cases rep; rename_i rh rt
     simp [recover_binary_nat, recover_binary_zmod]
     cases rep.head <;> simp [Bit.toNat, Bit.toZMod, *]
 
@@ -202,7 +209,7 @@ theorem binary_zmod_same_as_nat {n d} (rep : Vector Bit d):
   . apply binary_nat_lt
   . assumption
 
--- Uniquiness property of binary numbers
+/-- Uniquiness property of binary numbers -/
 theorem binary_zmod_unique {n d} (rep1 rep2 : Vector Bit d):
   2 ^ d < n ->
   (recover_binary_zmod rep1 : ZMod n) = (recover_binary_zmod rep2 : ZMod n) ->
