@@ -29,6 +29,38 @@ def toDir : Nat -> Dir
   | 1 => Dir.right
   | Nat.succ (Nat.succ _) => panic "Dir can be 0 or 1"
 
+def toDir_fact (x : Nat) [Fact (x=0 ∨ x=1)] : Dir := match p : x with
+  | 0 => Dir.left
+  | 1 => Dir.right
+  | Nat.succ (Nat.succ n) => False.elim (by
+  have : x=0 ∨ x=1 := (inferInstance : Fact (x=0 ∨ x=1)).elim
+  induction n generalizing x with
+  | zero =>
+    cases this
+    case _ => {
+      rename_i h₁
+      subst x
+      simp [*] at h₁
+    }
+    case _ => {
+      rename_i h₁
+      subst x
+      simp [*] at h₁
+    }
+  | succ _ _ =>
+    cases this
+    case _ => {
+      subst x
+      rename_i h₁
+      simp [*] at h₁
+    }
+    case _ => {
+      subst x
+      rename_i h₁
+      simp [*] at h₁
+    }
+  )
+
 def toDir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Vector Dir depth :=
   Vector.map Dir.toDir (Vector.map ZMod.val ix)
 

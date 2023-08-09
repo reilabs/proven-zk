@@ -66,6 +66,38 @@ def nat_to_bit (x : Nat) : Bit := match x with
   | 1 => Bit.one
   | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
 
+def nat_to_bit_fact (x : Nat) [Fact (x=0 ∨ x=1)] : Bit := match p : x with
+  | 0 => Bit.zero
+  | 1 => Bit.one
+  | Nat.succ (Nat.succ n) => False.elim (by
+  have : x=0 ∨ x=1 := (inferInstance : Fact (x=0 ∨ x=1)).elim
+  induction n generalizing x with
+  | zero =>
+    cases this
+    case _ => {
+      rename_i h₁
+      subst x
+      simp [*] at h₁
+    }
+    case _ => {
+      rename_i h₁
+      subst x
+      simp [*] at h₁
+    }
+  | succ _ _ =>
+    cases this
+    case _ => {
+      subst x
+      rename_i h₁
+      simp [*] at h₁
+    }
+    case _ => {
+      subst x
+      rename_i h₁
+      simp [*] at h₁
+    }
+  )
+
 /-!
 nat_to_bit_option encapsulates Bit inside Option.
 The advantage is that for x >= 2, Option is None because
