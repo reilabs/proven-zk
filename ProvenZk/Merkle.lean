@@ -23,12 +23,12 @@ def toZMod {n} : Dir -> ZMod n := fun b => match b with
   | Dir.left => 0
   | Dir.right => 1
 
-def nat_to_dir : Nat -> Dir
-  | 0 => Dir.left
-  | 1 => Dir.right
-  | Nat.succ (Nat.succ _) => panic "Dir can be 0 or 1"
+def nat_to_dir (x : Nat) : Option Dir := match x with
+  | 0 => Option.some Dir.left
+  | 1 => Option.some Dir.right
+  | Nat.succ (Nat.succ _) => Option.none
 
-def create_dir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Vector Dir depth :=
+def create_dir_vec {n} {depth} (ix: Vector (ZMod n) depth) : Vector (Option Dir) depth :=
   Vector.map Dir.nat_to_dir (Vector.map ZMod.val ix)
 
 @[simp]

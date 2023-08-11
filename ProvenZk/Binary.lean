@@ -33,45 +33,12 @@ instance : Inhabited Bit where
 
 end Bit
 
-theorem double_succ_ne_zero (n : Nat) : Nat.succ (Nat.succ n) ≠ 0 := by
-  simp
-
-theorem double_succ_ne_one (n : Nat) : Nat.succ (Nat.succ n) ≠ 1 := by
-  simp
-
-def nat_to_bit_with_condition (x : Nat) {cond : x = 0 ∨ x = 1} : Bit := match p : x with
-  | 0 => Bit.zero
-  | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => False.elim (by
-    cases cond with
-    | inl =>
-      rename_i h
-      rename_i input
-      apply double_succ_ne_zero input
-      exact h
-    | inr =>
-      rename_i h
-      rename_i input
-      apply double_succ_ne_one input
-      exact h
-  )
-
-def nat_to_bit (x : Nat) : Bit := match x with
-  | 0 => Bit.zero
-  | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
-
-def nat_to_bit' (x : Nat) : Option Bit := match x with
+def nat_to_bit (x : Nat) : Option Bit := match x with
   | 0 => Option.some Bit.zero
   | 1 => Option.some Bit.one
   | Nat.succ (Nat.succ _) => Option.none
 
-def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
-  | 0 => Bit.zero
-  | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
-
-def zmod_to_bit' {n} (x : ZMod n) : Option Bit := match ZMod.val x with
+def zmod_to_bit {n} (x : ZMod n) : Option Bit := match ZMod.val x with
   | 0 => Option.some Bit.zero
   | 1 => Option.some Bit.one
   | Nat.succ (Nat.succ _) => Option.none
@@ -95,7 +62,7 @@ theorem is_vector_binary_cons {a : ZMod n} {vec : Vector (ZMod n) d}:
   unfold is_vector_binary
   conv => lhs; unfold List.foldr; simp
 
-def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
+def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector (Option Bit) d :=
   Vector.map nat_to_bit (Vector.map ZMod.val a)
 
 def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
