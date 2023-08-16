@@ -5,6 +5,10 @@ import ProvenZk.Ext.List
 
 namespace Vector
 
+def foldr {n : Nat} (f : α → β → β) (init : β) (v : Vector α n): β := match n with
+  | 0          => init
+  | Nat.succ _ => f v.head (foldr f init v.tail)
+
 def mapIdx (v : Vector α n) (f : Nat -> α -> β): Vector β n := ⟨v.toList.mapIdx f, by simp⟩
 
 @[simp]
