@@ -5,6 +5,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 600
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -18,4 +19,6 @@ jobs:
           path: lake-packages
           key: "${{ env.LAKE_VERSION }}"
       - name: Build project
-        run: ~/.elan/bin/lake build
+        run: |
+          ~/.elan/bin/lake exe cache get
+          ~/.elan/bin/lake build
