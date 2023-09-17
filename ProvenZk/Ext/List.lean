@@ -1,4 +1,5 @@
-import Mathlib
+import Mathlib.Data.List.Basic
+import Mathlib.Data.List.Indexes
 
 namespace List
 

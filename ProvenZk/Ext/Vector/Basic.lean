@@ -1,4 +1,6 @@
-import Mathlib
+import Mathlib.Data.Vector.Snoc
+import Mathlib.Data.Matrix.Basic
+
 import ProvenZk.Binary
 import ProvenZk.Ext.Range
 import ProvenZk.Ext.List
