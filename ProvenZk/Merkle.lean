@@ -275,6 +275,21 @@ def set { depth : Nat } {F: Type} {H : Hash F 2} (tree : MerkleTree F H depth) (
 def set_at_nat(t : MerkleTree F H depth) (idx: Nat) (newVal: F): Option (MerkleTree F H depth) :=
   (t.set · newVal) <$> Dir.nat_to_dir_vec idx depth
 
+theorem item_at_invariant { depth : Nat } {F: Type} {H : Hash F 2} {tree : MerkleTree F H depth} {ix₁ ix₂ : Vector Dir depth} {item₁ : F} {neq : ix₁ ≠ ix₂}:
+  item_at (set tree ix₁ item₁) ix₂ = item_at tree ix₂ := by
+  induction depth with
+  | zero =>
+    cases ix₁ using Vector.casesOn
+    cases ix₂ using Vector.casesOn
+    cases (neq rfl)
+  | succ depth ih =>
+    cases ix₁ using Vector.casesOn; rename_i ix₁_hd ix₁_tl
+    cases ix₂ using Vector.casesOn; rename_i ix₂_hd ix₂_tl
+    cases tree; rename_i tree_l tree_r
+    simp [item_at, set, tree_for, set, left, right]
+    simp [Vector.vector_eq_cons] at neq
+    cases ix₁_hd <;> { cases ix₂_hd <;> { simp [ih, neq] } }
+
 -- Check set function changes the tree
 theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F 2} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (new : F) :
   (tree.set ix new).item_at ix = new := by
