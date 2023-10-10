@@ -1,7 +1,7 @@
 import Mathlib.Data.Vector.Snoc
 import Mathlib.Data.Matrix.Basic
+import Mathlib.Data.List.Defs
 
-import ProvenZk.Binary
 import ProvenZk.Ext.Range
 import ProvenZk.Ext.List
 
@@ -106,5 +106,45 @@ macro_rules
   | `(vec![$x, $xs:term,*]) => `(cons $x (vec![$xs,*]))
 
 def to_column (v : Vector α n) : Matrix (Fin n) Unit α := Matrix.of (fun i _ => v.get i)
+
+theorem vector_eq_cons : (x ::ᵥ xs) = (y ::ᵥ ys) ↔ x = y ∧ xs = ys := by
+  simp [Vector.eq_cons_iff]
+
+theorem vector_reverse_eq {x y : Vector α n} : (x.reverse = y) ↔ (x = y.reverse) := by
+  apply Iff.intro
+  case mp => {
+    intro
+    subst_vars
+    simp
+  }
+  case mpr => {
+    intro
+    subst_vars
+    simp
+  }
+
+@[simp]
+theorem vector_replicate_succ : Vector.replicate (Nat.succ n) a = a ::ᵥ Vector.replicate n a := by
+  rfl
+
+theorem vector_replicate_succ_snoc : Vector.replicate (Nat.succ n) a = (Vector.replicate n a).snoc a := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    conv => rhs; simp [←ih]
+
+@[simp]
+theorem vector_replicate_reverse : Vector.reverse (Vector.replicate n a) = Vector.replicate n a := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp [ih, ←vector_replicate_succ_snoc]
+
+@[simp]
+theorem vector_map_replicate : Vector.map f (Vector.replicate n a) = Vector.replicate n (f a) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    simp [ih]
 
 end Vector
