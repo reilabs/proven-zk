@@ -104,6 +104,16 @@ theorem create_dir_vec_bit : Dir.create_dir_vec w = Vector.map Dir.bit_to_dir (v
     congr
     rw [dir_bit_dir]
 
+theorem nat_to_dir_vec_unique {ix₁ ix₂ : Nat} {r₁ r₂ : Vector Dir d}:
+  Dir.nat_to_dir_vec ix₁ d = some r₁ → Dir.nat_to_dir_vec ix₂ d = some r₂ → r₁ = r₂ → ix₁ = ix₂ := by
+  simp [Dir.nat_to_dir_vec]
+  intros
+  subst_vars
+  rw [←recover_binary_nat_to_bits_le, Vector.vector_reverse_inj, Vector.vector_map_inj] at *
+  subst_vars
+  rfl
+  . intro a b; cases a <;> { cases b <;> tauto }
+
 end Dir
 
 inductive MerkleTree (F: Type) (H : Hash F 2) : Nat -> Type
@@ -289,6 +299,20 @@ theorem item_at_invariant { depth : Nat } {F: Type} {H : Hash F 2} {tree : Merkl
     simp [item_at, set, tree_for, set, left, right]
     simp [Vector.vector_eq_cons] at neq
     cases ix₁_hd <;> { cases ix₂_hd <;> { simp [ih, neq] } }
+
+theorem item_at_nat_invariant {H : Hash α 2} {tree tree': MerkleTree α H depth} { neq : ix₁ ≠ ix₂ }:
+  set_at_nat tree ix₁ item₁ = some tree' →
+  item_at_nat tree' ix₂ = item_at_nat tree ix₂ := by
+  simp [set_at_nat, item_at_nat]
+  intros; subst_vars
+  cases h : Dir.nat_to_dir_vec ix₂ depth with
+  | none => rfl
+  | some ix =>
+    simp
+    rw [item_at_invariant]
+    intro hp
+    refine (neq ?_)
+    apply Dir.nat_to_dir_vec_unique <;> assumption
 
 -- Check set function changes the tree
 theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F 2} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (new : F) :

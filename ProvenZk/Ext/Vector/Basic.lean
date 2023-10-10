@@ -147,4 +147,41 @@ theorem vector_map_replicate : Vector.map f (Vector.replicate n a) = Vector.repl
   | succ n ih =>
     simp [ih]
 
+theorem vector_reverse_inj {a b : Vector α d} : Vector.reverse a = Vector.reverse b ↔ a = b := by
+  apply Iff.intro
+  . intro h
+    induction d with
+    | zero =>
+      cases a using Vector.casesOn
+      cases b using Vector.casesOn
+      rfl
+    | succ d ih =>
+      cases a using Vector.revCasesOn
+      cases b using Vector.revCasesOn
+      simp [Vector.eq_cons_iff] at h
+      cases h;
+      subst_vars
+      congr
+      apply ih
+      assumption
+  . intro h; congr
+
+theorem vector_map_inj {a b : Vector α d} {f_inj : ∀ a b, f a = f b → a = b}: a.map f = b.map f ↔ a = b := by
+  apply Iff.intro
+  . intro h
+    induction d with
+    | zero =>
+      cases a using Vector.casesOn
+      cases b using Vector.casesOn
+      rfl
+    | succ d ih =>
+      cases a using Vector.casesOn
+      cases b using Vector.casesOn
+      simp [Vector.eq_cons_iff] at h
+      rcases h with ⟨h, t⟩
+      have := f_inj _ _ h
+      have := ih t
+      congr
+  . intro h; congr
+
 end Vector
