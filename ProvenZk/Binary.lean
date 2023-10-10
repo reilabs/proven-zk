@@ -35,7 +35,7 @@ instance : Inhabited Bit where
 
 end Bit
 
-def mod_two' (inp : Nat) : Bit := match h:inp%2 with
+def bit_mod_two (inp : Nat) : Bit := match h:inp%2 with
  | 0 => Bit.zero
  | 1 => Bit.one
  | x + 2 => False.elim (by
@@ -49,52 +49,19 @@ def nat_to_bits_le (l : Nat): Nat → Option (Vector Bit l) := match l with
   | 0 => fun i => if i = 0 then some Vector.nil else none
   | Nat.succ l => fun i => do
     let x := i / 2
-    let y := mod_two' i
+    let y := bit_mod_two i
     let xs ← nat_to_bits_le l x
     some (y ::ᵥ xs)
-
-theorem double_succ_ne_zero (n : Nat) : Nat.succ (Nat.succ n) ≠ 0 := by
-  simp
-
-theorem double_succ_ne_one (n : Nat) : Nat.succ (Nat.succ n) ≠ 1 := by
-  simp
-
-def nat_to_bit_with_condition (x : Nat) {cond : x = 0 ∨ x = 1} : Bit := match p : x with
-  | 0 => Bit.zero
-  | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => False.elim (by
-    cases cond with
-    | inl =>
-      rename_i h
-      rename_i input
-      apply double_succ_ne_zero input
-      exact h
-    | inr =>
-      rename_i h
-      rename_i input
-      apply double_succ_ne_one input
-      exact h
-  )
 
 def nat_to_bit (x : Nat) : Bit := match x with
   | 0 => Bit.zero
   | 1 => Bit.one
   | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
 
-def nat_to_bit' (x : Nat) : Option Bit := match x with
-  | 0 => Option.some Bit.zero
-  | 1 => Option.some Bit.one
-  | Nat.succ (Nat.succ _) => Option.none
-
 def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
   | 0 => Bit.zero
   | 1 => Bit.one
   | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
-
-def zmod_to_bit' {n} (x : ZMod n) : Option Bit := match ZMod.val x with
-  | 0 => Option.some Bit.zero
-  | 1 => Option.some Bit.one
-  | Nat.succ (Nat.succ _) => Option.none
 
 @[reducible]
 def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
@@ -167,8 +134,8 @@ theorem recover_binary_zmod_bit {d n} [Fact (n > 1)]  {w : Vector (ZMod n) d}: i
           rfl
     }
 
-theorem mod_two_bit_back : (Bit.toNat $ mod_two' n) = n % 2 := by
-  simp [mod_two']
+theorem mod_two_bit_back : (Bit.toNat $ bit_mod_two n) = n % 2 := by
+  simp [bit_mod_two]
   split
   . simp [*]
   . simp [*]
@@ -355,7 +322,7 @@ theorem vector_binary_of_bit_to_zmod {n : Nat} [Fact (n > 1)] {w : Vector Bit d 
     simp [is_vector_binary_cons]
     apply And.intro
     . unfold Bit.toZMod
-      split <;> {--trivial
+      split <;> {
         have : n > 1 := (inferInstance : Fact (n > 1)).elim
         induction n with
         | zero =>

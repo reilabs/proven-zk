@@ -29,7 +29,7 @@ def nat_to_dir : Nat -> Dir
   | 1 => Dir.right
   | Nat.succ (Nat.succ _) => panic "Dir can be 0 or 1"
 
-def mod_two (inp : Nat) : Dir := match h:inp%2 with
+def dir_mod_two (inp : Nat) : Dir := match h:inp%2 with
  | 0 => Dir.left
  | 1 => Dir.right
  | x + 2 => False.elim (by
@@ -42,7 +42,7 @@ def mod_two (inp : Nat) : Dir := match h:inp%2 with
 def nat_to_list_le : Nat → List Dir
   | 0 => [Dir.left]
   | 1 => [Dir.right]
-  | x+2 => mod_two x :: nat_to_list_le ((x + 2) / 2)
+  | x+2 => dir_mod_two x :: nat_to_list_le ((x + 2) / 2)
 termination_by nat_to_list_le x => x
 decreasing_by simp_wf; simp_arith; apply Nat.div_le_self
 
@@ -59,6 +59,8 @@ def dir_to_bit : Dir → Bit
 def bit_to_dir : Bit → Dir
   | Bit.zero => Dir.left
   | Bit.one => Dir.right
+
+theorem bit_to_dir_to_bit : Dir.bit_to_dir (Dir.dir_to_bit x) = x := by cases x <;> rfl
 
 def nat_to_dir_vec (idx : Nat) (depth : Nat ): Option <| Vector Dir depth :=
   (Vector.reverse ∘ Vector.map bit_to_dir) <$> nat_to_bits_le depth idx
@@ -101,8 +103,6 @@ theorem create_dir_vec_bit : Dir.create_dir_vec w = Vector.map Dir.bit_to_dir (v
     simp [ih]
     congr
     rw [dir_bit_dir]
-
-theorem bit_to_dir_to_bit : Dir.bit_to_dir (Dir.dir_to_bit x) = x := by cases x <;> rfl
 
 end Dir
 
