@@ -1,5 +1,5 @@
 import Init.Data.Range
-import Mathlib
+import Mathlib.Tactic.Linarith.Frontend
 
 namespace Std
 namespace Range
