@@ -82,6 +82,24 @@ theorem is_vector_binary_cons {a : ZMod n} {vec : Vector (ZMod n) d}:
   unfold is_vector_binary
   conv => lhs; unfold List.foldr; simp
 
+def is_vector_binary_rec {d n : Nat} (x : Vector (ZMod n) d) : Prop := match d with
+  | Nat.zero => True
+  | Nat.succ _ => (is_bit x.head) ∧ (is_vector_binary_rec x.tail)
+
+lemma is_vector_binary_rec_cons {n d} {x : ZMod n} {xs : Vector (ZMod n) d} : is_vector_binary_rec (x ::ᵥ xs) = (is_bit x ∧ is_vector_binary_rec xs) := by
+  simp [is_vector_binary_rec]
+
+lemma is_vector_binary_equiv {d n : Nat} (x : Vector (ZMod n) d) : is_vector_binary x = is_vector_binary_rec x := by
+  induction x using Vector.inductionOn with
+  | h_nil => simp [is_vector_binary_rec, is_vector_binary]
+  | h_cons ih =>
+    simp [is_vector_binary_cons, is_vector_binary_rec_cons]
+    intros
+    simp [ih]
+
+lemma is_vector_binary_rec_head_tail {n d} {x : Vector (ZMod n) (d+1)} : is_vector_binary_rec x = (is_bit x.head ∧ is_vector_binary_rec x.tail) := by
+  simp [is_vector_binary_rec]
+
 def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
   Vector.map nat_to_bit (Vector.map ZMod.val a)
 
