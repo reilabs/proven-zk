@@ -184,10 +184,9 @@ theorem vector_map_inj {a b : Vector α d} {f_inj : ∀ a b, f a = f b → a = b
       congr
   . intro h; congr
 
--- def front { n : Nat } (v : Vector α (n+1)) : Vector α (min n (n + 1)) := Vector.take n v
--- def front { n : Nat } (v : Vector α (n+2)) : Vector α (n+1) := Vector.removeNth (n+1) v
-def front { n : Nat } (v : Vector α (n+2)) : Vector α (n+1) := match n with
-  | Nat.zero => v.head ::ᵥ Vector.nil
-  | Nat.succ _ => v.head ::ᵥ (Vector.front v.tail)
+def dropLast { n : Nat } (v : Vector α n) : Vector α (n-1) := ⟨List.dropLast v.toList, by simp⟩
+
+theorem toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toList.dropLast := by
+  rfl
 
 end Vector
