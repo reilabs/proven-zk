@@ -83,8 +83,7 @@ theorem is_vector_binary_cons {a : ZMod n} {vec : Vector (ZMod n) d}:
   conv => lhs; unfold List.foldr; simp
 
 theorem is_vector_binary_dropLast {d n : Nat} {gate_0 : Vector (ZMod n) d} : is_vector_binary gate_0 → is_vector_binary (Vector.dropLast gate_0) := by
-  simp [is_vector_binary]
-  simp [Vector.toList_dropLast]
+  simp [is_vector_binary, Vector.toList_dropLast]
   intro h
   induction gate_0 using Vector.inductionOn with
   | h_nil => simp [List.dropLast]
@@ -92,9 +91,7 @@ theorem is_vector_binary_dropLast {d n : Nat} {gate_0 : Vector (ZMod n) d} : is_
     rename_i x xs
     cases xs using Vector.casesOn
     simp
-    rw [Vector.toList_cons]
-    rw [Vector.toList_cons]
-    rw [List.dropLast_cons]
+    rw [Vector.toList_cons, Vector.toList_cons, List.dropLast_cons]
     simp [h]
     cases h
     tauto
