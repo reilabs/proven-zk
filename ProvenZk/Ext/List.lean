@@ -34,4 +34,9 @@ lemma foldr_reverse_assoc {α β} {f : α -> β -> β} {b : β} {xs : List α}
     simp only [List.foldr, ih]
     assumption
 
+theorem dropLast_cons {head₁ head₂ : α} {tail : List α} : List.dropLast (head₁ :: head₂ :: tail) = head₁ :: (head₂ :: tail).dropLast := by
+  induction tail with
+  | nil => simp
+  | cons _ _ _ => simp [List.dropLast]
+
 end List
