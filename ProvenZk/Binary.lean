@@ -97,7 +97,7 @@ theorem is_vector_binary_dropLast {d n : Nat} {gate_0 : Vector (ZMod n) d} : is_
     tauto
 
 def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
-  Vector.map nat_to_bit (Vector.map ZMod.val a)
+  Vector.map zmod_to_bit a
 
 @[simp]
 theorem vector_zmod_to_bit_cons : vector_zmod_to_bit (x ::ᵥ xs) = (nat_to_bit x.val) ::ᵥ vector_zmod_to_bit xs := by
@@ -323,7 +323,6 @@ theorem zmod_to_bit_coe {n : Nat} [Fact (n > 1)] {w : Vector Bit d} : vector_zmo
           apply absurd this
           simp
         | succ =>
-          rw [ZMod.val]
           simp
           rfl
     }
