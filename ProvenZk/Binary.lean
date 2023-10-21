@@ -96,8 +96,78 @@ theorem is_vector_binary_dropLast {d n : Nat} {gate_0 : Vector (ZMod n) d} : is_
     cases h
     tauto
 
+lemma dropLast_symm {n} {xs : Vector Bit d} :
+  Vector.map (fun i => @Bit.toZMod n i) (Vector.dropLast xs) = (Vector.map (fun i => @Bit.toZMod n i) xs).dropLast := by
+  induction xs using Vector.inductionOn with
+  | h_nil =>
+    simp [Vector.dropLast, Vector.map]
+  | h_cons ih₁ =>
+    rename_i x₁ xs
+    induction xs using Vector.inductionOn with
+    | h_nil =>
+      simp [Vector.dropLast, Vector.map]
+    | h_cons _ =>
+      rename_i x₂ xs
+      simp [Vector.vector_list_vector]
+      simp [ih₁]
+
+lemma zmod_to_bit_to_zmod {n : Nat} [Fact (n > 1)] {x : (ZMod n)} (h : is_bit x):
+  Bit.toZMod (zmod_to_bit x) = x := by
+  simp [is_bit] at h
+  cases h with
+  | inl =>
+    subst_vars
+    simp [zmod_to_bit, Bit.toZMod]
+  | inr =>
+    subst_vars
+    simp [zmod_to_bit, ZMod.val_one, Bit.toZMod]
+
+lemma bit_to_zmod_to_bit {n : Nat} [Fact (n > 1)] {x : Bit}:
+  zmod_to_bit (@Bit.toZMod n x) = x := by
+  cases x with
+  | zero =>
+    simp [zmod_to_bit, Bit.toZMod]
+  | one =>
+    simp [zmod_to_bit, Bit.toZMod]
+    simp [zmod_to_bit, ZMod.val_one, Bit.toZMod]
+
 def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
   Vector.map zmod_to_bit a
+
+lemma vector_zmod_to_bit_last {n d : Nat} {xs : Vector (ZMod n) (d+1)} :
+  (vector_zmod_to_bit xs).last = (zmod_to_bit xs.last) := by
+  simp [vector_zmod_to_bit, Vector.last]
+
+lemma vector_zmod_to_bit_to_zmod {n d : Nat} [Fact (n > 1)] {xs : Vector (ZMod n) d} (h : is_vector_binary xs) :
+  Vector.map Bit.toZMod (vector_zmod_to_bit xs) = xs := by
+  induction xs using Vector.inductionOn with
+  | h_nil => simp
+  | h_cons ih =>
+    simp [is_vector_binary_cons] at h
+    cases h
+    simp [vector_zmod_to_bit]
+    simp [vector_zmod_to_bit] at ih
+    rw [zmod_to_bit_to_zmod]
+    rw [ih]
+    assumption
+    assumption
+
+lemma vector_bit_to_zmod_to_bit {d n : Nat} [Fact (n > 1)] {xs : Vector Bit d} :
+  vector_zmod_to_bit (Vector.map (fun i => @Bit.toZMod n i) xs) = xs := by
+  induction xs using Vector.inductionOn with
+  | h_nil => simp
+  | h_cons ih =>
+    rename_i x xs
+    simp [vector_zmod_to_bit]
+    simp [vector_zmod_to_bit] at ih
+    simp [ih]
+    rw [bit_to_zmod_to_bit]
+
+lemma vector_zmod_to_bit_dropLast {n d : Nat} [Fact (n > 1)] {xs : Vector (ZMod n) (d+1)} (h : is_vector_binary xs) :
+  Vector.map Bit.toZMod (Vector.dropLast (vector_zmod_to_bit xs)) = (Vector.dropLast xs) := by
+  simp [dropLast_symm]
+  rw [vector_zmod_to_bit_to_zmod]
+  assumption
 
 @[simp]
 theorem vector_zmod_to_bit_cons : vector_zmod_to_bit (x ::ᵥ xs) = (nat_to_bit x.val) ::ᵥ vector_zmod_to_bit xs := by
