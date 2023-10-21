@@ -114,6 +114,20 @@ theorem nat_to_dir_vec_unique {ix₁ ix₂ : Nat} {r₁ r₂ : Vector Dir d}:
   rfl
   . intro a b; cases a <;> { cases b <;> tauto }
 
+lemma dropLastOrder {d n : Nat} {out : Vector (ZMod n) d} : Dir.create_dir_vec (Vector.dropLast out) = (Dir.create_dir_vec out).dropLast := by
+  induction out using Vector.inductionOn with
+  | h_nil =>
+    simp [Dir.create_dir_vec, Vector.dropLast, Dir.nat_to_dir, Vector.map]
+  | h_cons ih₁ =>
+    rename_i x₁ xs
+    induction xs using Vector.inductionOn with
+    | h_nil =>
+      simp [Dir.create_dir_vec, Vector.dropLast, Dir.nat_to_dir, Vector.map]
+    | h_cons _ =>
+      rename_i x₂ xs
+      simp [Vector.vector_list_vector]
+      simp [ih₁]
+
 end Dir
 
 inductive MerkleTree (F: Type) (H : Hash F 2) : Nat -> Type
@@ -402,5 +416,29 @@ theorem recover_proof_reversible {H : Hash α 2} [Fact (perfect_hash H)] {Tree :
       apply ih
       assumption
     }
+
+theorem recover_equivalence
+  {F depth}
+  (H : Hash F 2)
+  [Fact (perfect_hash H)]
+  (tree : MerkleTree F H depth)
+  (Path : Vector Dir depth)
+  (Proof : Vector F depth)
+  (Item : F) :
+    (item_at tree Path = Item ∧ proof tree Path = Proof) ↔
+    recover H Path Proof Item = tree.root := by
+  apply Iff.intro
+  . intros
+    casesm* (_ ∧ _)
+    rename_i hitem_at hproof
+    rw [<-hitem_at]
+    rw [<-hproof]
+    apply recover_proof_is_root
+  . intros
+    apply And.intro
+    . apply proof_ceritfies_item (proof := Proof)
+      assumption
+    . apply recover_proof_reversible (Item := Item)
+      assumption
 
 end MerkleTree

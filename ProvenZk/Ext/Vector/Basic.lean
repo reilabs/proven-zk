@@ -186,7 +186,10 @@ theorem vector_map_inj {a b : Vector α d} {f_inj : ∀ a b, f a = f b → a = b
 
 def dropLast { n : Nat } (v : Vector α n) : Vector α (n-1) := ⟨List.dropLast v.toList, by simp⟩
 
-theorem toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toList.dropLast := by
+lemma toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toList.dropLast := by
+  rfl
+
+lemma vector_list_vector {d} {x₁ x₂ : α} {xs : Vector α d} : (x₁ ::ᵥ x₂ ::ᵥ xs).dropLast = x₁ ::ᵥ (x₂ ::ᵥ xs).dropLast := by
   rfl
 
 end Vector
