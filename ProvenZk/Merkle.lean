@@ -338,6 +338,12 @@ theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F 2} (tree : Me
     simp [set]
     split <;> simp [item_at, tree_for, left, right, *]
 
+lemma set_implies_item_at { depth : Nat } {F: Type} {H : Hash F 2} {t₁ t₂ : MerkleTree F H depth} {ix : Vector Dir depth} {item : F} :
+  set t₁ ix item = t₂ → item_at t₂ ix = item := by
+  intro h
+  rw [<-h]
+  apply read_after_insert_sound
+
 -- Related to recover_proof_is_root
 theorem proof_ceritfies_item
   {depth : Nat}
