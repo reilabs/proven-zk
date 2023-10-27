@@ -1,3 +1,5 @@
+import Mathlib.Data.Vector.MapLemmas
+
 import ProvenZk.Ext.Vector
 import ProvenZk.Hash
 import ProvenZk.Binary
@@ -128,6 +130,79 @@ lemma dropLastOrder {d n : Nat} {out : Vector (ZMod n) d} : Dir.create_dir_vec (
       simp [Vector.vector_list_vector]
       simp [ih₁]
 
+def fin_to_dir_vec {depth : Nat} (idx : Fin (2 ^ depth)): Vector Dir depth :=
+  (Vector.map Dir.bit_to_dir (fin_to_bits_le idx))
+
+lemma zmod_to_bit_and_dir {n : Nat} [Fact (n > 1)] {x : ZMod n} {h : is_bit x}:
+  Dir.bit_to_dir (zmod_to_bit x) = Dir.nat_to_dir (ZMod.val x) := by
+  simp only [zmod_to_bit]
+  simp only [Dir.bit_to_dir]
+  simp only [Dir.nat_to_dir]
+  cases h with
+  | inl =>
+    rename_i h
+    simp [h]
+  | inr =>
+    rename_i h
+    simp [h]
+    rw [ZMod.val_one]
+
+lemma vector_zmod_to_bit_and_dir {n : Nat} [Fact (n > 1)] {w : Vector (ZMod n) d} :
+  is_vector_binary w →
+  Vector.map (fun x => Dir.bit_to_dir (zmod_to_bit x)) w = Vector.map (fun x => Dir.nat_to_dir (ZMod.val x)) w := by
+  induction w using Vector.inductionOn with
+  | h_nil =>
+    simp
+  | h_cons ih =>
+    intro h
+    simp [is_vector_binary_cons] at h
+    cases h
+    rename_i y ys
+    simp
+    rw [zmod_to_bit_and_dir]
+    rw [ih]
+    assumption
+    assumption
+
+theorem recover_binary_zmod'_to_dir {n d : Nat} [Fact (n > 1)] {v : ZMod n} {w : Vector (ZMod n) d}:
+  v.val < 2^d →
+  n > 2^d →
+  is_vector_binary w →
+  recover_binary_zmod' w = v →
+  fin_to_dir_vec v.val = (Dir.create_dir_vec w) := by
+  intros
+  simp [fin_to_dir_vec]
+  simp [fin_to_bits_le]
+  split
+  . simp [Dir.create_dir_vec]
+    rename_i r _
+    have : some r = some (vector_zmod_to_bit w) := by
+      rw [<-@recover_binary_zmod'_to_bits_le (v:= v)]
+      apply Eq.symm
+      rename_i h
+      rw [ZMod.cast_eq_val] at h
+      rw [Fin.val_cast_of_lt] at h
+      assumption
+      assumption
+      assumption
+      linarith
+      assumption
+      assumption
+    simp at this
+    rw [this]
+    simp [vector_zmod_to_bit]
+    rw [vector_zmod_to_bit_and_dir]
+    assumption
+  . rename_i hfin _ _ _ h
+    rw [ZMod.cast_eq_val] at h
+    rw [Fin.val_cast_of_lt] at h
+    apply False.elim (by
+      have := nat_to_bits_le_some_of_lt hfin
+      cases this
+      simp [*] at h
+    )
+    assumption
+
 end Dir
 
 inductive MerkleTree (F: Type) (H : Hash F 2) : Nat -> Type
@@ -164,6 +239,9 @@ def item_at {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p 
 def item_at_nat {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (idx : Nat) : Option F := do
   t.item_at <$> Dir.nat_to_dir_vec idx depth
 
+def tree_item_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): F :=
+  MerkleTree.item_at Tree (Dir.fin_to_dir_vec i).dropLast.reverse
+
 -- Walk the tree using path Vector and return list of Hashes along the path
 def proof {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : Vector Dir depth) : Vector F depth := match depth with
   | Nat.zero => Vector.nil
@@ -171,6 +249,9 @@ def proof {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : 
 
 def proof_at_nat (t : MerkleTree F H depth) (idx: Nat): Option (Vector F depth) :=
   t.proof <$> Dir.nat_to_dir_vec idx depth
+
+def tree_proof_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): Vector F d :=
+  MerkleTree.proof Tree (Dir.fin_to_dir_vec i).dropLast.reverse
 
 -- Recover the Merkle tree from partial hashes. From bottom to top. It returns the item at the top (i.e. root)
 def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
