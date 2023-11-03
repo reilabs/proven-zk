@@ -230,7 +230,6 @@ def root {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) : F :=
 | leaf f => f
 | bin l r => H vec![root l, root r]
 
--- Walk the tree using path Vector and return leaf
 def item_at {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : Vector Dir depth) : F := match depth with
   | Nat.zero => match t with
     | leaf f => f
@@ -242,7 +241,6 @@ def item_at_nat {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth)
 def tree_item_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): F :=
   MerkleTree.item_at Tree (Dir.fin_to_dir_vec i).dropLast.reverse
 
--- Walk the tree using path Vector and return list of Hashes along the path
 def proof {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : Vector Dir depth) : Vector F depth := match depth with
   | Nat.zero => Vector.nil
   | Nat.succ _ => Vector.cons (t.tree_for p.head.swap).root ((t.tree_for p.head).proof p.tail)
@@ -253,7 +251,6 @@ def proof_at_nat (t : MerkleTree F H depth) (idx: Nat): Option (Vector F depth) 
 def tree_proof_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): Vector F d :=
   MerkleTree.proof Tree (Dir.fin_to_dir_vec i).dropLast.reverse
 
--- Recover the Merkle tree from partial hashes. From bottom to top. It returns the item at the top (i.e. root)
 def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
   | Nat.zero => item
   | Nat.succ _ =>
@@ -263,7 +260,6 @@ def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proo
       | Dir.left => H vec![recover', pitem]
       | Dir.right => H vec![pitem, recover']
 
--- Same proof and path imply same item
 theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2)
   (ix : Vector Dir depth) (proof : Vector F depth) (item₁ : F) (item₂ : F)
   [Fact (perfect_hash H)]
@@ -290,7 +286,6 @@ theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2)
     intro h
     rw [h]
 
--- Recover the Merkle tree from partial hashes. From top to bottom. It returns the item at the bottom (i.e. leaf)
 def recover_tail {depth : Nat} {F: Type} (H: Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
   | Nat.zero => item
   | Nat.succ _ =>
@@ -318,7 +313,6 @@ lemma recover_tail_snoc
         lhs
         rw [recover_tail, Vector.head_snoc, Vector.head_snoc, Vector.tail_snoc, Vector.tail_snoc, ih]
 
--- recover_tail on reverse Vectors is equal to recover
 theorem recover_tail_reverse_equals_recover
   {F depth}
   (H : Hash F 2)
@@ -351,7 +345,6 @@ theorem recover_tail_equals_recover_reverse
   rw [recover_tail_reverse_equals_recover]
   simp
 
--- recover on Merke Tree returns root
 theorem recover_proof_is_root
   {F depth}
   (H : Hash F 2)
@@ -370,7 +363,6 @@ theorem recover_proof_is_root
       congr <;> simp [*, proof, tree_for, left, right, Dir.swap, item_at, ih]
     )
 
--- Set item in the tree at position ix
 def set { depth : Nat } {F: Type} {H : Hash F 2} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (item : F) : MerkleTree F H depth := match depth with
   | Nat.zero => leaf item
   | Nat.succ _ => match ix.head with
@@ -409,7 +401,6 @@ theorem item_at_nat_invariant {H : Hash α 2} {tree tree': MerkleTree α H depth
     refine (neq ?_)
     apply Dir.nat_to_dir_vec_unique <;> assumption
 
--- Check set function changes the tree
 theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F 2} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (new : F) :
   (tree.set ix new).item_at ix = new := by
   induction depth with
@@ -425,7 +416,6 @@ lemma set_implies_item_at { depth : Nat } {F: Type} {H : Hash F 2} {t₁ t₂ : 
   rw [<-h]
   apply read_after_insert_sound
 
--- Related to recover_proof_is_root
 theorem proof_ceritfies_item
   {depth : Nat}
   {F: Type}
