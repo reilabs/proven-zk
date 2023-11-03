@@ -528,4 +528,23 @@ theorem recover_equivalence
     . apply recover_proof_reversible (Item := Item)
       assumption
 
+theorem eq_root_eq_tree {H} [ph: Fact (perfect_hash H)] {t₁ t₂ : MerkleTree α H d}:
+  t₁.root = t₂.root ↔ t₁ = t₂ := by
+  induction d with
+  | zero => cases t₁; cases t₂; tauto
+  | succ _ ih =>
+    cases t₁
+    cases t₂
+    apply Iff.intro
+    . intro h
+      have h := Fact.elim ph h
+      injection h with h
+      injection h with _ h
+      injection h
+      congr <;> {rw [←ih]; assumption}
+    . intro h
+      injection h
+      subst_vars
+      rfl
+
 end MerkleTree
