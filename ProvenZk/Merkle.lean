@@ -257,6 +257,18 @@ def tree_proof_at_fin_dropLast {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d)
 def tree_proof_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^d)): Vector F d :=
   MerkleTree.proof Tree (Dir.fin_to_dir_vec i).reverse
 
+lemma proof_at_nat_to_fin {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (idx : Nat) (h : idx < 2 ^ depth):
+  MerkleTree.proof_at_nat t idx = some (MerkleTree.tree_proof_at_fin t idx) := by
+  simp [MerkleTree.proof_at_nat, MerkleTree.tree_proof_at_fin]
+  simp [Dir.nat_to_dir_vec, Dir.fin_to_dir_vec]
+  simp [fin_to_bits_le_is_some h]
+
+lemma proof_at_nat_to_fin_some {depth : Nat} {F: Type} {H: Hash F 2} {a : Vector F depth} (t : MerkleTree F H depth) (idx : Nat) (h : idx < 2 ^ depth):
+  MerkleTree.proof_at_nat t idx = some a ↔
+  MerkleTree.tree_proof_at_fin t idx = a := by
+  rw [proof_at_nat_to_fin (h := h)]
+  . simp
+
 def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
   | Nat.zero => item
   | Nat.succ _ =>
@@ -381,6 +393,31 @@ def set_at_nat(t : MerkleTree F H depth) (idx: Nat) (newVal: F): Option (MerkleT
 def tree_set_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^d)) (Item : F): MerkleTree F H d :=
   MerkleTree.set Tree (Dir.fin_to_dir_vec i).reverse Item
 
+lemma set_at_nat_to_fin {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (idx : Nat) (item : F) (h : idx < 2 ^ depth):
+  MerkleTree.set_at_nat t idx item = some (MerkleTree.tree_set_at_fin t idx item) := by
+  simp [MerkleTree.set_at_nat, MerkleTree.tree_set_at_fin]
+  simp [Dir.nat_to_dir_vec]
+  simp [Dir.fin_to_dir_vec]
+  simp [fin_to_bits_le_is_some h]
+
+lemma set_at_nat_to_fin_some {depth : Nat} {F: Type} {H: Hash F 2} {a : MerkleTree F H depth} (t : MerkleTree F H depth) (idx : Nat) (item : F) (h : idx < 2 ^ depth):
+  MerkleTree.set_at_nat t idx item = some a ↔
+  MerkleTree.tree_set_at_fin t idx item = a := by
+  rw [set_at_nat_to_fin (h := h)]
+  . simp
+
+lemma item_at_nat_to_fin {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (idx : Nat) (h : idx < 2 ^ depth):
+  MerkleTree.item_at_nat t idx = some (MerkleTree.tree_item_at_fin t idx) := by
+  simp [MerkleTree.item_at_nat, MerkleTree.tree_item_at_fin]
+  simp [Dir.nat_to_dir_vec, Dir.fin_to_dir_vec]
+  simp [fin_to_bits_le_is_some h]
+
+lemma item_at_nat_to_fin_some {depth : Nat} {F: Type} {H: Hash F 2} {a : F} (t : MerkleTree F H depth) (idx : Nat) (h : idx < 2 ^ depth):
+  MerkleTree.item_at_nat t idx = some a ↔
+  MerkleTree.tree_item_at_fin t idx = a := by
+  rw [item_at_nat_to_fin (h := h)]
+  . simp
+
 theorem item_at_invariant { depth : Nat } {F: Type} {H : Hash F 2} {tree : MerkleTree F H depth} {ix₁ ix₂ : Vector Dir depth} {item₁ : F} {neq : ix₁ ≠ ix₂}:
   item_at (set tree ix₁ item₁) ix₂ = item_at tree ix₂ := by
   induction depth with
@@ -409,6 +446,14 @@ theorem item_at_nat_invariant {H : Hash α 2} {tree tree': MerkleTree α H depth
     intro hp
     refine (neq ?_)
     apply Dir.nat_to_dir_vec_unique <;> assumption
+
+theorem item_at_fin_invariant {H : Hash α 2} {tree tree': MerkleTree α H depth} { neq : ix₁ ≠ ix₂ } {h₁ : ix₁ < 2 ^ depth} {h₂ : ix₂ < 2 ^ depth}:
+  MerkleTree.tree_set_at_fin tree ix₁ item₁ = tree' →
+  MerkleTree.tree_item_at_fin tree' ix₂ = MerkleTree.tree_item_at_fin tree ix₂ := by
+  rw [<-set_at_nat_to_fin_some (h := h₁)]
+  rw [<-item_at_nat_to_fin_some (h := h₂)]
+  rw [<-item_at_nat_to_fin (h := h₂)]
+  apply MerkleTree.item_at_nat_invariant (neq := neq)
 
 theorem read_after_insert_sound {depth : Nat} {F: Type} {H: Hash F 2} (tree : MerkleTree F H depth) (ix : Vector Dir depth) (new : F) :
   (tree.set ix new).item_at ix = new := by

@@ -462,6 +462,24 @@ def fin_to_bits_le {d : Nat} (n : Fin (2 ^ d)): Vector Bit d := match h: nat_to_
     simp [*] at h
   )
 
+lemma fin_to_bits_recover_binary {D n : Nat } [Fact (n > 1)] (Index : (ZMod n)) (ix_small : Index.val < 2^D) :
+  recover_binary_zmod' (Vector.map Bit.toZMod (fin_to_bits_le { val := ZMod.val Index, isLt := ix_small })) = Index := by
+  rw [recover_binary_of_to_bits]
+  simp [fin_to_bits_le]
+  split
+  . assumption
+  . contradiction
+
+lemma fin_to_bits_le_is_some {depth : Nat} {idx : Nat} (h : idx < 2 ^ depth) :
+  nat_to_bits_le depth idx = some (fin_to_bits_le idx) := by
+  simp [fin_to_bits_le]
+  split
+  . rename_i hnats
+    rw [Nat.mod_eq_of_lt] at hnats
+    . simp [hnats]
+    . simp [h]
+  . contradiction
+
 theorem fin_to_bits_le_to_recover_binary_zmod' {n d : Nat} [Fact (n > 1)] {v : ZMod n} {w : Vector (ZMod n) d} {h : v.val < 2^d }:
   n > 2^d →
   is_vector_binary w →
