@@ -238,8 +238,11 @@ def item_at {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p 
 def item_at_nat {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (idx : Nat) : Option F := do
   t.item_at <$> Dir.nat_to_dir_vec idx depth
 
-def tree_item_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): F :=
+def tree_item_at_fin_dropLast {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): F :=
   MerkleTree.item_at Tree (Dir.fin_to_dir_vec i).dropLast.reverse
+
+def tree_item_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^d)): F :=
+  MerkleTree.item_at Tree (Dir.fin_to_dir_vec i).reverse
 
 def proof {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : Vector Dir depth) : Vector F depth := match depth with
   | Nat.zero => Vector.nil
@@ -248,8 +251,11 @@ def proof {depth : Nat} {F: Type} {H: Hash F 2} (t : MerkleTree F H depth) (p : 
 def proof_at_nat (t : MerkleTree F H depth) (idx: Nat): Option (Vector F depth) :=
   t.proof <$> Dir.nat_to_dir_vec idx depth
 
-def tree_proof_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): Vector F d :=
+def tree_proof_at_fin_dropLast {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^(d+1))): Vector F d :=
   MerkleTree.proof Tree (Dir.fin_to_dir_vec i).dropLast.reverse
+
+def tree_proof_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^d)): Vector F d :=
+  MerkleTree.proof Tree (Dir.fin_to_dir_vec i).reverse
 
 def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proof : Vector F depth) (item : F) : F := match depth with
   | Nat.zero => item
@@ -371,6 +377,9 @@ def set { depth : Nat } {F: Type} {H : Hash F 2} (tree : MerkleTree F H depth) (
 
 def set_at_nat(t : MerkleTree F H depth) (idx: Nat) (newVal: F): Option (MerkleTree F H depth) :=
   (t.set · newVal) <$> Dir.nat_to_dir_vec idx depth
+
+def tree_set_at_fin {F: Type} {H: Hash F 2} (Tree : MerkleTree F H d) (i : Fin (2^d)) (Item : F): MerkleTree F H d :=
+  MerkleTree.set Tree (Dir.fin_to_dir_vec i).reverse Item
 
 theorem item_at_invariant { depth : Nat } {F: Type} {H : Hash F 2} {tree : MerkleTree F H depth} {ix₁ ix₂ : Vector Dir depth} {item₁ : F} {neq : ix₁ ≠ ix₂}:
   item_at (set tree ix₁ item₁) ix₂ = item_at tree ix₂ := by
@@ -536,5 +545,60 @@ theorem eq_root_eq_tree {H} [ph: Fact (perfect_hash H)] {t₁ t₂ : MerkleTree 
       injection h
       subst_vars
       rfl
+
+lemma proof_of_set_is_proof
+  {F d}
+  (H : Hash F 2)
+  [Fact (perfect_hash H)]
+  (Tree : MerkleTree F H d)
+  (ix : Vector Dir d)
+  (item : F):
+  (MerkleTree.proof (MerkleTree.set Tree ix item) ix) = MerkleTree.proof Tree ix := by
+  induction d with
+  | zero =>
+    simp [MerkleTree.set, MerkleTree.proof]
+  | succ d ih =>
+    cases Tree
+    simp [MerkleTree.set, MerkleTree.proof, MerkleTree.tree_for]
+    split
+    . rename_i hdir
+      have : Dir.swap (Dir.swap (Vector.head ix)) = Dir.right := by
+        rw [hdir]
+        simp [Dir.swap]
+      have : Vector.head ix = Dir.right := by
+        rw [<-this]
+        simp [Dir.swap]
+        cases ix.head
+        . simp
+        . simp
+      rw [this]
+      simp [MerkleTree.set, MerkleTree.left, MerkleTree.right]
+      simp [Vector.vector_eq_cons]
+      rw [ih]
+    . rename_i hdir
+      have : Dir.swap (Dir.swap (Vector.head ix)) = Dir.left := by
+        rw [hdir]
+        simp [Dir.swap]
+      have : Vector.head ix = Dir.left := by
+        rw [<-this]
+        simp [Dir.swap]
+        cases ix.head
+        . simp
+        . simp
+      rw [this]
+      simp [MerkleTree.set, MerkleTree.left, MerkleTree.right]
+      simp [Vector.vector_eq_cons]
+      rw [ih]
+
+lemma proof_of_set_fin
+  {F d}
+  (H : Hash F 2)
+  [Fact (perfect_hash H)]
+  (Tree : MerkleTree F H d)
+  (ix : Fin (2^d))
+  (item : F):
+  (tree_proof_at_fin (tree_set_at_fin Tree ix item) ix) = tree_proof_at_fin Tree ix := by
+  simp [tree_proof_at_fin, tree_set_at_fin]
+  simp [proof_of_set_is_proof]
 
 end MerkleTree
