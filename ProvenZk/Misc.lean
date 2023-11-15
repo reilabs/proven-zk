@@ -81,3 +81,16 @@ theorem is_bit_one_sub {a : ZMod N}: is_bit (Gates.sub 1 a) ↔ is_bit a := by
 lemma double_prop {a b c d : Prop} : (b ∧ a ∧ c ∧ a ∧ d) ↔ (b ∧ a ∧ c ∧ d) := by
   simp
   tauto
+
+lemma and_iff (P Q R : Prop): (Q ↔ R) → (P ∧ Q ↔ P ∧ R) := by
+  tauto
+
+lemma ex_iff {P Q : α → Prop}: (∀x, P x ↔ Q x) → ((∃x, P x) ↔ ∃x, Q x) := by
+  intro h;
+  apply Iff.intro <;> {
+    intro h1
+    cases h1; rename_i witness prop
+    exists witness
+    try { rw [h witness]; assumption }
+    try { rw [←h witness]; assumption }
+  }

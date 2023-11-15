@@ -290,4 +290,16 @@ theorem allIxes_indexed₃ {v : {v : Vector (Vector (Vector α a) b) c // allIxe
   prop (((v.val[i]'i_small)[j]'j_small)[k]'k_small) :=
   v.prop ⟨i, i_small⟩ ⟨j, j_small⟩ ⟨k, k_small⟩
 
+@[simp]
+theorem map_ofFn {f : α → β} (g : Fin n → α) :
+  Vector.map f (Vector.ofFn g) = Vector.ofFn (fun x => f (g x)) := by
+  apply Vector.eq
+  simp
+  rfl
+
+@[simp]
+theorem map_id': Vector.map (fun x => x) v = v := by
+  have : ∀α, (fun (x:α) => x) = id := by intro _; funext _; rfl
+  rw [this, Vector.map_id]
+
 end Vector

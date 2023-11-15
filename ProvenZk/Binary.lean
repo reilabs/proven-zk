@@ -3,6 +3,7 @@ import Mathlib.Data.Bitvec.Defs
 
 import ProvenZk.Ext.List
 import ProvenZk.Ext.Vector
+import ProvenZk.Subvector
 
 inductive Bit : Type where
   | zero : Bit
@@ -75,6 +76,10 @@ theorem is_bit_one : is_bit (1 : ZMod n) := by tauto
 abbrev bOne : {v : ZMod n // is_bit v} := ⟨1, by simp⟩
 
 abbrev bZero : {v : ZMod n // is_bit v} := ⟨0, by simp⟩
+
+def embedBit {n : Nat} : Bit → {x : (ZMod n) // is_bit x}
+| Bit.zero => bZero
+| Bit.one => bOne
 
 def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
   (List.foldr (fun a r => is_bit a ∧ r) True (Vector.toList x))
@@ -600,3 +605,46 @@ lemma bitCases_bZero {n:Nat}: bitCases (@bZero (n + 2)) = Bit.zero := by rfl
 
 @[simp]
 lemma bitCases_bOne {n:Nat}: bitCases (@bOne (n+2)) = Bit.one := by rfl
+
+theorem is_vector_binary_iff_allIxes_is_bit {n : Nat} {v : Vector (ZMod n) d}: Vector.allIxes is_bit v ↔ is_vector_binary v := by
+  induction v using Vector.inductionOn with
+  | h_nil => simp [is_vector_binary]
+  | h_cons ih => conv => lhs; simp [ih]
+
+theorem fin_to_bits_le_recover_binary_nat {v : Vector Bit d}:
+  fin_to_bits_le ⟨recover_binary_nat v, binary_nat_lt _⟩ = v := by
+  unfold fin_to_bits_le
+  split
+  . rename_i h
+    rw [←recover_binary_nat_to_bits_le] at h
+    exact binary_nat_unique _ _ h
+  . contradiction
+
+theorem SubVector_map_cast_lower {v : SubVector α n prop} {f : α → β }:
+  (v.val.map f) = v.lower.map fun (x : Subtype prop) => f x.val := by
+  rw [←Vector.ofFn_get v.val]
+  simp only [SubVector.lower, GetElem.getElem, Vector.map_ofFn]
+
+@[simp]
+theorem recover_binary_nat_fin_to_bits_le {v : Fin (2^d)}:
+  recover_binary_nat (fin_to_bits_le v) = v.val := by
+  unfold fin_to_bits_le
+  split
+  . rename_i h
+    rw [←recover_binary_nat_to_bits_le] at h
+    assumption
+  . contradiction
+
+@[simp]
+theorem SubVector_lower_lift : SubVector.lift (SubVector.lower v) = v := by
+  unfold SubVector.lift
+  unfold SubVector.lower
+  apply Subtype.eq
+  simp [GetElem.getElem]
+
+@[simp]
+theorem SubVector_lift_lower : SubVector.lower (SubVector.lift v) = v := by
+  unfold SubVector.lift
+  unfold SubVector.lower
+  apply Subtype.eq
+  simp [GetElem.getElem]
