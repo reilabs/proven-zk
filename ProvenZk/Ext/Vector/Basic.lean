@@ -309,10 +309,10 @@ instance : HAppend (Vector α d₁) (Vector α d₂) (Vector α (d₁ + d₂)) :
 theorem ofFnGet_id : ofFnGet v = v := by simp [ofFnGet, GetElem.getElem]
 
 @[simp]
-theorem Vector.hAppend_toList {v₁ : Vector α d₁} {v₂ : Vector α d₂}:
+theorem hAppend_toList {v₁ : Vector α d₁} {v₂ : Vector α d₂}:
   (v₁ ++ v₂).toList = v₁.toList ++ v₂.toList := by rfl
 
-theorem Vector.append_inj {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}:
+theorem append_inj {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}:
   v₁ ++ v₂ = w₁ ++ w₂ → v₁ = w₁ ∧ v₂ = w₂ := by
   intro h
   induction v₁, w₁ using Vector.inductionOn₂ with
