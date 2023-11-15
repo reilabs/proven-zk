@@ -302,4 +302,90 @@ theorem map_id': Vector.map (fun x => x) v = v := by
   have : ∀α, (fun (x:α) => x) = id := by intro _; funext _; rfl
   rw [this, Vector.map_id]
 
+def ofFnGet (v : Vector F d) : Vector F d := Vector.ofFn fun i => v[i.val]'i.prop
+instance : HAppend (Vector α d₁) (Vector α d₂) (Vector α (d₁ + d₂)) := ⟨Vector.append⟩
+
+@[simp]
+theorem ofFnGet_id : ofFnGet v = v := by simp [ofFnGet, GetElem.getElem]
+
+@[simp]
+theorem Vector.hAppend_toList {v₁ : Vector α d₁} {v₂ : Vector α d₂}:
+  (v₁ ++ v₂).toList = v₁.toList ++ v₂.toList := by rfl
+
+theorem Vector.append_inj {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}:
+  v₁ ++ v₂ = w₁ ++ w₂ → v₁ = w₁ ∧ v₂ = w₂ := by
+  intro h
+  induction v₁, w₁ using Vector.inductionOn₂ with
+  | nil =>
+    apply And.intro rfl
+    apply Vector.eq
+    have := congrArg toList h
+    simp at this
+    assumption
+  | cons ih =>
+    have := congrArg toList h
+    simp at this
+    rcases this with ⟨h₁, h₂⟩
+    rw [←hAppend_toList, ←hAppend_toList] at h₂
+    have := Vector.eq _ _ h₂
+    have := ih this
+    cases this
+    subst_vars
+    apply And.intro <;> rfl
+
+theorem allIxes_toList : Vector.allIxes prop v ↔ ∀ i, prop (v.toList.get i) := by
+  unfold Vector.allIxes
+  apply Iff.intro
+  . intro h i
+    rcases i with ⟨i, p⟩
+    simp at p
+    simp [GetElem.getElem, Vector.get] at h
+    have := h ⟨i, p⟩
+    conv at this => arg 1; whnf
+    exact this
+  . intro h i
+    simp [GetElem.getElem, Vector.get]
+    rcases i with ⟨i, p⟩
+    have := h ⟨i, by simpa⟩
+    conv at this => arg 1; whnf
+    exact this
+
+theorem allIxes_append {v₁ : Vector α n₁} {v₂ : Vector α n₂} : Vector.allIxes prop (v₁ ++ v₂) ↔ Vector.allIxes prop v₁ ∧ Vector.allIxes prop v₂ := by
+  simp [allIxes_toList]
+  apply Iff.intro
+  . intro h
+    apply And.intro
+    . intro i
+      rcases i with ⟨i, hp⟩
+      simp at hp
+      rw [←List.get_append]
+      exact h ⟨i, (by simp; apply Nat.lt_add_right; assumption)⟩
+    . intro i
+      rcases i with ⟨i, hp⟩
+      simp at hp
+      have := h ⟨n₁ + i, (by simpa)⟩
+      rw [List.get_append_right] at this
+      simp at this
+      exact this
+      . simp
+      . simpa
+  . intro ⟨l, r⟩
+    intro ⟨i, hi⟩
+    simp at hi
+    cases lt_or_ge i n₁ with
+    | inl hp =>
+      rw [List.get_append _ (by simpa)]
+      exact l ⟨i, (by simpa)⟩
+    | inr hp =>
+      rw [List.get_append_right]
+      have := r ⟨i - n₁, (by simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption )⟩
+      simp at this
+      simpa
+      . simp; exact LE.le.ge hp
+      . simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption
+
+theorem SubVector_append {v₁ : Vector α d₁} {prop₁ : Vector.allIxes prop v₁ } {v₂ : Vector α d₂} {prop₂ : Vector.allIxes prop v₂}:
+  (Subtype.mk v₁ prop₁).val ++ (Subtype.mk v₂ prop₂).val =
+  (Subtype.mk (v₁ ++ v₂) (allIxes_append.mpr ⟨prop₁, prop₂⟩)).val := by eq_refl
+
 end Vector
