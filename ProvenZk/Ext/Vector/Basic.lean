@@ -192,4 +192,8 @@ lemma toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toLi
 lemma vector_list_vector {d} {x₁ x₂ : α} {xs : Vector α d} : (x₁ ::ᵥ x₂ ::ᵥ xs).dropLast = x₁ ::ᵥ (x₂ ::ᵥ xs).dropLast := by
   rfl
 
+lemma cons_zero {d : Nat } {y : α} {v : Vector α d} :
+  (y ::ᵥ v)[0] = y := by
+    rfl
+
 end Vector
