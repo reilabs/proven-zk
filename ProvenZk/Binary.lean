@@ -66,6 +66,16 @@ def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
 @[reducible]
 def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
 
+@[simp]
+theorem is_bit_zero : is_bit (0 : ZMod n) := by tauto
+
+@[simp]
+theorem is_bit_one : is_bit (1 : ZMod n) := by tauto
+
+abbrev bOne : {v : ZMod n // is_bit v} := ⟨1, by simp⟩
+
+abbrev bZero : {v : ZMod n // is_bit v} := ⟨0, by simp⟩
+
 def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
   (List.foldr (fun a r => is_bit a ∧ r) True (Vector.toList x))
 
@@ -516,3 +526,77 @@ lemma vector_bit_to_zmod_last {d n : Nat} [Fact (n > 1)] {xs : Vector Bit (d+1)}
   have hxs : vector_zmod_to_bit (Vector.map (fun i => @Bit.toZMod n i) xs) = xs := by
     simp [vector_bit_to_zmod_to_bit]
   rw [hx, hxs]
+
+@[elab_as_elim]
+def bitCases' {n : Nat} {C : Subtype (α := ZMod n.succ.succ) is_bit → Sort _} (v : Subtype (α := ZMod n.succ.succ) is_bit)
+  (zero : C bZero)
+  (one : C bOne): C v := by
+  rcases v with ⟨v, h⟩
+  rcases v with ⟨v, _⟩
+  cases v with
+  | zero => exact zero
+  | succ v => cases v with
+    | zero => exact one
+    | succ v =>
+      apply False.elim
+      rcases h with h | h <;> {
+        injection h with h
+        simp at h
+      }
+
+theorem isBitCases (b : Subtype (α := ZMod n) is_bit): b = bZero ∨ b = bOne := by
+  cases b with | mk _ prop =>
+  cases prop <;> {subst_vars ; tauto }
+
+
+def bitCases : { v : ZMod (Nat.succ (Nat.succ n)) // is_bit v} → Bit
+  | ⟨0, _⟩ => Bit.zero
+  | ⟨1, _⟩ => Bit.one
+  | ⟨⟨Nat.succ (Nat.succ i), _⟩, h⟩ => False.elim (by
+      cases h <;> {
+        rename_i h
+        injection h with h;
+        rw [Nat.mod_eq_of_lt] at h
+        . injection h; try (rename_i h; injection h)
+        . simp
+      }
+    )
+
+@[simp] lemma ne_1_0 {n:Nat}: ¬(1 : ZMod (n.succ.succ)) = (0 : ZMod (n.succ.succ)) := by
+  intro h;
+  conv at h => lhs; whnf
+  conv at h => rhs; whnf
+  injection h with h
+  injection h
+
+@[simp] lemma ne_0_1 {n:Nat}: ¬(0 : ZMod (n.succ.succ)) = (1 : ZMod (n.succ.succ)) := by
+  intro h;
+  conv at h => lhs; whnf
+  conv at h => rhs; whnf
+  injection h with h
+  injection h
+
+
+@[simp]
+lemma bitCases_eq_0 : bitCases b = Bit.zero ↔ b = bZero := by
+  cases b with | mk val prop =>
+  cases prop <;> {
+    subst_vars
+    conv => lhs; lhs; whnf
+    simp
+  }
+
+@[simp]
+lemma bitCases_eq_1 : bitCases b = Bit.one ↔ b = bOne := by
+  cases b with | mk val prop =>
+  cases prop <;> {
+    subst_vars
+    conv => lhs; lhs; whnf
+    simp
+  }
+
+@[simp]
+lemma bitCases_bZero {n:Nat}: bitCases (@bZero (n + 2)) = Bit.zero := by rfl
+
+@[simp]
+lemma bitCases_bOne {n:Nat}: bitCases (@bOne (n+2)) = Bit.one := by rfl

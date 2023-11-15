@@ -2,6 +2,7 @@ import Mathlib.Data.Vector.Snoc
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.List.Defs
 
+import ProvenZk.Ext.Fin
 import ProvenZk.Ext.Range
 import ProvenZk.Ext.List
 
@@ -192,8 +193,101 @@ lemma toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toLi
 lemma vector_list_vector {d} {x₁ x₂ : α} {xs : Vector α d} : (x₁ ::ᵥ x₂ ::ᵥ xs).dropLast = x₁ ::ᵥ (x₂ ::ᵥ xs).dropLast := by
   rfl
 
-lemma cons_zero {d : Nat } {y : α} {v : Vector α d} :
-  (y ::ᵥ v)[0] = y := by
-    rfl
+@[simp]
+theorem vector_get_zero {vs : Vector i n} : (v ::ᵥ vs)[0] = v := by rfl
+
+@[simp]
+theorem vector_get_succ_fin {vs : Vector i n} {i : Fin n} : (v ::ᵥ vs)[i.succ] = vs[i] := by rfl
+
+@[simp]
+theorem vector_get_succ_nat {vs : Vector i n} {i : Nat} {h : i.succ < n.succ } : (v ::ᵥ vs)[i.succ]'h = vs[i]'(by linarith) := by rfl
+
+@[simp]
+theorem vector_get_snoc_last { vs : Vector α n }:
+  (vs.snoc v).get (Fin.last n) = v := by
+  induction n with
+  | zero =>
+    cases vs using Vector.casesOn; rfl
+  | succ n ih =>
+    cases vs using Vector.casesOn
+    rw [Fin.last_succ_eq_succ_last, Vector.snoc_cons, Vector.get_cons_succ, ih]
+
+@[simp]
+lemma snoc_get_castSucc {vs : Vector α n}: (vs.snoc v).get (Fin.castSucc i) = vs.get i := by
+  cases n
+  case zero => cases i using finZeroElim
+  case succ n =>
+  induction n with
+  | zero =>
+    cases i using Fin.cases with
+    | H0 => cases vs using Vector.casesOn with | cons hd tl => simp
+    | Hs i => cases i using finZeroElim
+  | succ n ih =>
+    cases vs using Vector.casesOn with | cons hd tl =>
+    cases i using Fin.cases with
+    | H0 => simp
+    | Hs i => simp [Fin.castSucc_succ_eq_succ_castSucc, ih]
+
+theorem vector_get_val_getElem {v : Vector α n} {i : Fin n}: v[i.val]'(i.prop) = v.get i := by
+  rfl
+
+theorem getElem_def {v : Vector α n} {i : Nat} {prop}: v[i]'prop = v.get ⟨i, prop⟩ := by
+  rfl
+
+@[simp]
+lemma vector_get_snoc_fin_prev {vs : Vector α n} {v : α} {i : Fin n}:
+  (vs.snoc v)[i.val]'(by (have := i.prop); linarith) = vs[i.val]'(i.prop) := by
+  simp [vector_get_val_getElem, getElem_def, Fin.castSucc_def]
+
+theorem ofFn_snoc' { fn : Fin (Nat.succ n) → α }:
+  Vector.ofFn fn = Vector.snoc (Vector.ofFn (fun (x : Fin n) => fn (Fin.castSucc x))) (fn n) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    conv => lhs; rw [Vector.ofFn, ih]
+    simp [Vector.ofFn]
+    congr
+    simp [Fin.succ]
+    congr
+    simp [Nat.mod_eq_of_lt]
+
+def allIxes (f : α → Prop) : Vector α n → Prop := fun v => ∀(i : Fin n), f v[i]
+
+@[simp]
+theorem allIxes_cons : allIxes f (v ::ᵥ vs) ↔ f v ∧ allIxes f vs := by
+  simp [allIxes, GetElem.getElem]
+  apply Iff.intro
+  . intro h
+    exact ⟨h 0, fun i => h i.succ⟩
+  . intro h i
+    cases i using Fin.cases
+    . simp [h.1]
+    . simp [h.2]
+
+@[simp]
+theorem allIxes_nil : allIxes f Vector.nil := by
+  simp [allIxes]
+
+theorem getElem_allIxes {v : { v: Vector α n // allIxes prop v  }} {i : Nat} { i_small : i < n}:
+  v.val[i]'i_small = ↑(Subtype.mk (v.val.get ⟨i, i_small⟩) (v.prop ⟨i, i_small⟩)) := by rfl
+
+theorem getElem_allIxes₂ {v : { v: Vector (Vector α m) n // allIxes (allIxes prop) v  }} {i j: Nat} { i_small : i < n} { j_small : j < m}:
+  (v.val[i]'i_small)[j]'j_small = ↑(Subtype.mk ((v.val.get ⟨i, i_small⟩).get ⟨j, j_small⟩) (v.prop ⟨i, i_small⟩ ⟨j, j_small⟩)) := by rfl
+
+theorem allIxes_indexed {v : {v : Vector α n // allIxes prop v}} {i : Nat} {i_small : i < n}:
+  prop (v.val[i]'i_small) := v.prop ⟨i, i_small⟩
+
+theorem allIxes_indexed₂ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes prop) v}}
+  {i : Nat} {i_small : i < c}
+  {j : Nat} {j_small : j < b}:
+  prop ((v.val[i]'i_small)[j]'j_small) :=
+  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩
+
+theorem allIxes_indexed₃ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes (allIxes prop)) v}}
+  {i : Nat} {i_small : i < c}
+  {j : Nat} {j_small : j < b}
+  {k : Nat} {k_small : k < a}:
+  prop (((v.val[i]'i_small)[j]'j_small)[k]'k_small) :=
+  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩ ⟨k, k_small⟩
 
 end Vector
