@@ -6,7 +6,7 @@ package «proven-zk» {
 }
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git"@"ea67efc21e4e1496f0a1d954cd0c0a952523133a"
+  "https://github.com/leanprover-community/mathlib4.git"@"v4.2.0"
 
 @[default_target]
 lean_lib «ProvenZk» {

@@ -1,6 +1,5 @@
 import ProvenZk.Ext.Vector.Basic
 
-
 namespace Vector
 
 private lemma set_at_len (l1 l2 : List α) (it new : α):
