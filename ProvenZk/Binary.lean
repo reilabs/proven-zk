@@ -1,3 +1,4 @@
+import Mathlib.Data.ZMod.Defs
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Bitvec.Defs
 
@@ -412,7 +413,6 @@ theorem zmod_to_bit_coe {n : Nat} [Fact (n > 1)] {w : Vector Bit d} :
           apply absurd this
           simp
         | succ =>
-          simp
           rfl
     }
 
@@ -507,7 +507,6 @@ theorem fin_to_bits_le_to_recover_binary_zmod' {n d : Nat} [Fact (n > 1)] {v : Z
     linarith
     assumption
     assumption
-    simp [recover_binary_nat_to_bits_le]
     simp [fin_to_bits_le]
     split
     rename_i h

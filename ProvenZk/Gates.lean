@@ -1,4 +1,4 @@
-import Mathlib.Data.ZMod.Basic
+import Mathlib.Data.ZMod.Defs
 
 import ProvenZk.Binary
 

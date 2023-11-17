@@ -10,8 +10,8 @@ def snoc (vs: SubVector α n prop) (v : Subtype prop): SubVector α n.succ prop 
   ⟨vs.val.snoc v.val, by
     intro i
     cases i using Fin.lastCases with
-    | hlast => simp [GetElem.getElem, Fin.last_def, Subtype.property]
-    | hcast i =>
+    | last => simp [GetElem.getElem, Fin.last_def, Subtype.property]
+    | cast i =>
       have := vs.prop i
       simp at this
       simp [*]
@@ -56,6 +56,6 @@ theorem snoc_lower {vs : SubVector α n prop} {v : Subtype prop}:
     cases n with
     | zero => cases i using finZeroElim
     | _ => simp [GetElem.getElem, snoc]
-  . simp [GetElem.getElem, snoc, Fin.cast_last]
+  . simp [GetElem.getElem, snoc, Fin.nat_cast_last]
 
 end SubVector

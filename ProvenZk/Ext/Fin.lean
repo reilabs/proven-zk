@@ -18,7 +18,7 @@ theorem castSucc_def {i : Fin n} :
   Fin.mk (n := Nat.succ n) (i.val) (by cases i; linarith) = i.castSucc := by
   rfl
 
-theorem cast_last {n : Nat} : ↑n = Fin.last n := by
+theorem nat_cast_last {n : Nat} : ↑n = Fin.last n := by
   conv => lhs; whnf
   conv => rhs; whnf
   simp
