@@ -134,17 +134,10 @@ lemma xor_equivalence {a b out : ZMod N} :
     simp at h
     casesm* (_ ∧ _)
     rename_i ha hb _
-    cases ha
-    . cases hb
-      repeat (
-        subst_vars
-        simp
-      )
-    . cases hb
-      repeat (
-        subst_vars
-        simp
-      )
+    cases ha <;> cases hb <;> {
+      subst_vars
+      simp
+    }
   . intro h
     casesm* (_ ∨ _)
     repeat (
@@ -166,17 +159,10 @@ lemma or_equivalence {a b out : ZMod N} :
     simp at h
     casesm* (_ ∧ _)
     rename_i ha hb _
-    cases ha
-    . cases hb
-      repeat (
-        subst_vars
-        simp
-      )
-    . cases hb
-      repeat (
-        subst_vars
-        simp
-      )
+    cases ha <;> cases hb <;> {
+      subst_vars
+      simp
+    }
   . intro h
     casesm* (_ ∨ _)
     repeat (
@@ -200,17 +186,10 @@ lemma and_equivalence {a b out : ZMod N} :
     simp at h
     casesm* (_ ∧ _)
     rename_i ha hb _
-    cases ha
-    . cases hb
-      repeat (
-        subst_vars
-        simp
-      )
-    . cases hb
-      repeat (
-        subst_vars
-        simp
-      )
+    cases ha <;> cases hb <;> {
+      subst_vars
+      simp
+    }
   . intro h
     casesm* (_ ∨ _)
     repeat (
@@ -280,17 +259,10 @@ lemma lookup_equivalence {b0 b1 i0 i1 i2 i3 out : ZMod N} :
   . intro h
     casesm* (_ ∧ _)
     rename_i hb0 hb1 _
-    cases hb0
-    . cases hb1
-      . subst_vars
-        simp
-      . subst_vars
-        simp
-    . cases hb1
-      . subst_vars
-        simp
-      . subst_vars
-        simp [add_assoc]
+    cases hb0 <;> cases hb1 <;> {
+      subst_vars
+      simp [add_assoc]
+    }
   . intro h
     casesm* (_ ∨ _)
     repeat (
