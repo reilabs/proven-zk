@@ -9,7 +9,12 @@ import ProvenZk.Subvector
 inductive Bit : Type where
   | zero : Bit
   | one : Bit
-  deriving Repr, BEq
+  deriving BEq
+
+instance : Repr Bit where
+  reprPrec
+    | Bit.zero, _  => "0"
+    | Bit.one, _ => "1"
 
 namespace Bit
 def toNat : Bit -> Nat := fun b => match b with
@@ -54,6 +59,17 @@ def nat_to_bits_le (l : Nat): Nat → Option (Vector Bit l) := match l with
     let y := bit_mod_two i
     let xs ← nat_to_bits_le l x
     some (y ::ᵥ xs)
+
+def nat_to_bits_le_full : Nat → List Bit
+  | 0 => [0]
+  | 1 => [1]
+  | n + 2 =>
+    have : Nat.succ (n/2) < n+2 := by
+      simp_arith
+      apply Nat.div_le_self
+    bit_mod_two (n+2) :: nat_to_bits_le_full ((n+2) / 2)
+
+def binary_length (n : Nat) : Nat := List.length (nat_to_bits_le_full n)
 
 def nat_to_bit (x : Nat) : Bit := match x with
   | 0 => Bit.zero
