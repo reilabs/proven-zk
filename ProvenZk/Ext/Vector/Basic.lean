@@ -2,6 +2,7 @@ import Mathlib.Data.Vector.Snoc
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.List.Defs
 
+import ProvenZk.Ext.Fin
 import ProvenZk.Ext.Range
 import ProvenZk.Ext.List
 
@@ -186,7 +187,205 @@ theorem vector_map_inj {a b : Vector α d} {f_inj : ∀ a b, f a = f b → a = b
 
 def dropLast { n : Nat } (v : Vector α n) : Vector α (n-1) := ⟨List.dropLast v.toList, by simp⟩
 
-theorem toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toList.dropLast := by
+lemma toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toList.dropLast := by
   rfl
+
+lemma vector_list_vector {d} {x₁ x₂ : α} {xs : Vector α d} : (x₁ ::ᵥ x₂ ::ᵥ xs).dropLast = x₁ ::ᵥ (x₂ ::ᵥ xs).dropLast := by
+  rfl
+
+@[simp]
+theorem vector_get_zero {vs : Vector i n} : (v ::ᵥ vs)[0] = v := by rfl
+
+@[simp]
+theorem vector_get_succ_fin {vs : Vector i n} {i : Fin n} : (v ::ᵥ vs)[i.succ] = vs[i] := by rfl
+
+@[simp]
+theorem vector_get_succ_nat {vs : Vector i n} {i : Nat} {h : i.succ < n.succ } : (v ::ᵥ vs)[i.succ]'h = vs[i]'(by linarith) := by rfl
+
+@[simp]
+theorem vector_get_snoc_last { vs : Vector α n }:
+  (vs.snoc v).get (Fin.last n) = v := by
+  induction n with
+  | zero =>
+    cases vs using Vector.casesOn; rfl
+  | succ n ih =>
+    cases vs using Vector.casesOn
+    rw [Fin.last_succ_eq_succ_last, Vector.snoc_cons, Vector.get_cons_succ, ih]
+
+@[simp]
+lemma snoc_get_castSucc {vs : Vector α n}: (vs.snoc v).get (Fin.castSucc i) = vs.get i := by
+  cases n
+  case zero => cases i using finZeroElim
+  case succ n =>
+  induction n with
+  | zero =>
+    cases i using Fin.cases with
+    | H0 => cases vs using Vector.casesOn with | cons hd tl => simp
+    | Hs i => cases i using finZeroElim
+  | succ n ih =>
+    cases vs using Vector.casesOn with | cons hd tl =>
+    cases i using Fin.cases with
+    | H0 => simp
+    | Hs i => simp [Fin.castSucc_succ_eq_succ_castSucc, ih]
+
+theorem vector_get_val_getElem {v : Vector α n} {i : Fin n}: v[i.val]'(i.prop) = v.get i := by
+  rfl
+
+theorem getElem_def {v : Vector α n} {i : Nat} {prop}: v[i]'prop = v.get ⟨i, prop⟩ := by
+  rfl
+
+@[simp]
+lemma vector_get_snoc_fin_prev {vs : Vector α n} {v : α} {i : Fin n}:
+  (vs.snoc v)[i.val]'(by (have := i.prop); linarith) = vs[i.val]'(i.prop) := by
+  simp [vector_get_val_getElem, getElem_def, Fin.castSucc_def]
+
+theorem ofFn_snoc' { fn : Fin (Nat.succ n) → α }:
+  Vector.ofFn fn = Vector.snoc (Vector.ofFn (fun (x : Fin n) => fn (Fin.castSucc x))) (fn n) := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    conv => lhs; rw [Vector.ofFn, ih]
+    simp [Vector.ofFn]
+    congr
+    simp [Fin.succ]
+    congr
+    simp [Nat.mod_eq_of_lt]
+
+def allIxes (f : α → Prop) : Vector α n → Prop := fun v => ∀(i : Fin n), f v[i]
+
+@[simp]
+theorem allIxes_cons : allIxes f (v ::ᵥ vs) ↔ f v ∧ allIxes f vs := by
+  simp [allIxes, GetElem.getElem]
+  apply Iff.intro
+  . intro h
+    exact ⟨h 0, fun i => h i.succ⟩
+  . intro h i
+    cases i using Fin.cases
+    . simp [h.1]
+    . simp [h.2]
+
+@[simp]
+theorem allIxes_nil : allIxes f Vector.nil := by
+  simp [allIxes]
+
+theorem getElem_allIxes {v : { v: Vector α n // allIxes prop v  }} {i : Nat} { i_small : i < n}:
+  v.val[i]'i_small = ↑(Subtype.mk (v.val.get ⟨i, i_small⟩) (v.prop ⟨i, i_small⟩)) := by rfl
+
+theorem getElem_allIxes₂ {v : { v: Vector (Vector α m) n // allIxes (allIxes prop) v  }} {i j: Nat} { i_small : i < n} { j_small : j < m}:
+  (v.val[i]'i_small)[j]'j_small = ↑(Subtype.mk ((v.val.get ⟨i, i_small⟩).get ⟨j, j_small⟩) (v.prop ⟨i, i_small⟩ ⟨j, j_small⟩)) := by rfl
+
+theorem allIxes_indexed {v : {v : Vector α n // allIxes prop v}} {i : Nat} {i_small : i < n}:
+  prop (v.val[i]'i_small) := v.prop ⟨i, i_small⟩
+
+theorem allIxes_indexed₂ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes prop) v}}
+  {i : Nat} {i_small : i < c}
+  {j : Nat} {j_small : j < b}:
+  prop ((v.val[i]'i_small)[j]'j_small) :=
+  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩
+
+theorem allIxes_indexed₃ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes (allIxes prop)) v}}
+  {i : Nat} {i_small : i < c}
+  {j : Nat} {j_small : j < b}
+  {k : Nat} {k_small : k < a}:
+  prop (((v.val[i]'i_small)[j]'j_small)[k]'k_small) :=
+  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩ ⟨k, k_small⟩
+
+@[simp]
+theorem map_ofFn {f : α → β} (g : Fin n → α) :
+  Vector.map f (Vector.ofFn g) = Vector.ofFn (fun x => f (g x)) := by
+  apply Vector.eq
+  simp
+  rfl
+
+@[simp]
+theorem map_id': Vector.map (fun x => x) v = v := by
+  have : ∀α, (fun (x:α) => x) = id := by intro _; funext _; rfl
+  rw [this, Vector.map_id]
+
+def ofFnGet (v : Vector F d) : Vector F d := Vector.ofFn fun i => v[i.val]'i.prop
+instance : HAppend (Vector α d₁) (Vector α d₂) (Vector α (d₁ + d₂)) := ⟨Vector.append⟩
+
+@[simp]
+theorem ofFnGet_id : ofFnGet v = v := by simp [ofFnGet, GetElem.getElem]
+
+@[simp]
+theorem hAppend_toList {v₁ : Vector α d₁} {v₂ : Vector α d₂}:
+  (v₁ ++ v₂).toList = v₁.toList ++ v₂.toList := by rfl
+
+theorem append_inj {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}:
+  v₁ ++ v₂ = w₁ ++ w₂ → v₁ = w₁ ∧ v₂ = w₂ := by
+  intro h
+  induction v₁, w₁ using Vector.inductionOn₂ with
+  | nil =>
+    apply And.intro rfl
+    apply Vector.eq
+    have := congrArg toList h
+    simp at this
+    assumption
+  | cons ih =>
+    have := congrArg toList h
+    simp at this
+    rcases this with ⟨h₁, h₂⟩
+    rw [←hAppend_toList, ←hAppend_toList] at h₂
+    have := Vector.eq _ _ h₂
+    have := ih this
+    cases this
+    subst_vars
+    apply And.intro <;> rfl
+
+theorem allIxes_toList : Vector.allIxes prop v ↔ ∀ i, prop (v.toList.get i) := by
+  unfold Vector.allIxes
+  apply Iff.intro
+  . intro h i
+    rcases i with ⟨i, p⟩
+    simp at p
+    simp [GetElem.getElem, Vector.get] at h
+    have := h ⟨i, p⟩
+    conv at this => arg 1; whnf
+    exact this
+  . intro h i
+    simp [GetElem.getElem, Vector.get]
+    rcases i with ⟨i, p⟩
+    have := h ⟨i, by simpa⟩
+    conv at this => arg 1; whnf
+    exact this
+
+theorem allIxes_append {v₁ : Vector α n₁} {v₂ : Vector α n₂} : Vector.allIxes prop (v₁ ++ v₂) ↔ Vector.allIxes prop v₁ ∧ Vector.allIxes prop v₂ := by
+  simp [allIxes_toList]
+  apply Iff.intro
+  . intro h
+    apply And.intro
+    . intro i
+      rcases i with ⟨i, hp⟩
+      simp at hp
+      rw [←List.get_append]
+      exact h ⟨i, (by simp; apply Nat.lt_add_right; assumption)⟩
+    . intro i
+      rcases i with ⟨i, hp⟩
+      simp at hp
+      have := h ⟨n₁ + i, (by simpa)⟩
+      rw [List.get_append_right] at this
+      simp at this
+      exact this
+      . simp
+      . simpa
+  . intro ⟨l, r⟩
+    intro ⟨i, hi⟩
+    simp at hi
+    cases lt_or_ge i n₁ with
+    | inl hp =>
+      rw [List.get_append _ (by simpa)]
+      exact l ⟨i, (by simpa)⟩
+    | inr hp =>
+      rw [List.get_append_right]
+      have := r ⟨i - n₁, (by simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption )⟩
+      simp at this
+      simpa
+      . simp; exact LE.le.ge hp
+      . simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption
+
+theorem SubVector_append {v₁ : Vector α d₁} {prop₁ : Vector.allIxes prop v₁ } {v₂ : Vector α d₂} {prop₂ : Vector.allIxes prop v₂}:
+  (Subtype.mk v₁ prop₁).val ++ (Subtype.mk v₂ prop₂).val =
+  (Subtype.mk (v₁ ++ v₂) (allIxes_append.mpr ⟨prop₁, prop₂⟩)).val := by eq_refl
 
 end Vector
