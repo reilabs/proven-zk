@@ -9,3 +9,4 @@ import ProvenZk.Ext.List
 import ProvenZk.Ext.Fin
 import ProvenZk.Subvector
 import ProvenZk.Misc
+import ProvenZk.GatesEquivalence
