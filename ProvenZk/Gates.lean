@@ -45,10 +45,17 @@ def cmp_9 (a b out : ZMod N): Prop :=
 def is_zero (a out: ZMod N): Prop := (a ≠ 0 ∧ out = 1-(a*(1/a))) ∨ (a = 0 ∧ out = 1)
 def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
-def le (a b : ZMod N): Prop :=
-  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) % N = a.val) ∧
-  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) % N = b.val) ∧
-  ZMod.val a <= ZMod.val b
+
+def le_8 (a b : ZMod N): Prop :=
+  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) % N = a.val ∧
+  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) % N = b.val ∧
+  a.val <= b.val
+
+def le_9 (a b : ZMod N): Prop :=
+  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) = a.val ∧
+  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) = b.val ∧
+  a.val <= b.val
+
 -- `a(.val)` is always less than `N` because it's `ZMod`.
 -- If `a` doesn't fit in `n`, then the result of `recover_binary_zmod'` is `a % 2^n`
 -- If `a` fits `n`, the result is exact
@@ -100,11 +107,13 @@ def GatesGnark_8 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
   is_zero := GatesDef.is_zero,
   eq := GatesDef.eq,
   ne := GatesDef.ne,
-  le := GatesDef.le,
+  le := GatesDef.le_8,
   to_binary := GatesDef.to_binary,
   from_binary := GatesDef.from_binary
 }
 
 def GatesGnark_9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
-  GatesGnark_8 N with cmp := GatesDef.cmp_9
+  GatesGnark_8 N with
+    cmp := GatesDef.cmp_9
+    le := GatesDef.le_9
 }
