@@ -1,4 +1,5 @@
 import ProvenZk.Gates
+import ProvenZk.GatesEquivalence
 import ProvenZk.Binary
 
 open  GatesEquivalence
@@ -6,8 +7,8 @@ open  GatesEquivalence
 variable {N : Nat}
 variable [Fact (Nat.Prime N)]
 
-theorem or_rw (a b out : (ZMod N)) : Gates.or a b out ↔
-  (Gates.is_bool a ∧ Gates.is_bool b ∧
+theorem or_rw (a b out : (ZMod N)) : GatesDef.or a b out ↔
+  (GatesDef.is_bool a ∧ GatesDef.is_bool b ∧
   ( (out = 1 ∧ (a = 1 ∨ b = 1) ∨
     (out = 0 ∧ a = 0 ∧ b = 0)))) := by
   rw [or_equivalence]
@@ -31,7 +32,7 @@ theorem or_rw (a b out : (ZMod N)) : Gates.or a b out ↔
       tauto
     }
 
-lemma select_rw {b i1 i2 out : (ZMod N)} : (Gates.select b i1 i2 out) ↔ is_bit b ∧ match zmod_to_bit b with
+lemma select_rw {b i1 i2 out : (ZMod N)} : (GatesDef.select b i1 i2 out) ↔ is_bit b ∧ match zmod_to_bit b with
   | Bit.zero => out = i2
   | Bit.one => out = i1 := by
   rw [select_equivalence]
@@ -59,36 +60,36 @@ lemma select_rw {b i1 i2 out : (ZMod N)} : (Gates.select b i1 i2 out) ↔ is_bit
     )
 
 @[simp]
-theorem is_bool_is_bit (a : ZMod n) [Fact (Nat.Prime n)]: Gates.is_bool a = is_bit a := by
+theorem is_bool_is_bit (a : ZMod n) [Fact (Nat.Prime n)]: GatesDef.is_bool a = is_bit a := by
   rw [is_bool_equivalence]
 
 @[simp]
-theorem select_zero {a b r : ZMod N}: Gates.select 0 a b r = (r = b) := by
-  simp [Gates.select]
+theorem select_zero {a b r : ZMod N}: GatesDef.select 0 a b r = (r = b) := by
+  simp [GatesDef.select]
 
 @[simp]
-theorem select_one {a b r : ZMod N}: Gates.select 1 a b r = (r = a) := by
-  simp [Gates.select]
+theorem select_one {a b r : ZMod N}: GatesDef.select 1 a b r = (r = a) := by
+  simp [GatesDef.select]
 
 @[simp]
-theorem or_zero { a r : ZMod N}: Gates.or a 0 r = (is_bit a ∧ r = a) := by
-  simp [Gates.or]
+theorem or_zero { a r : ZMod N}: GatesDef.or a 0 r = (is_bit a ∧ r = a) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem zero_or { a r : ZMod N}: Gates.or 0 a r = (is_bit a ∧ r = a) := by
-  simp [Gates.or]
+theorem zero_or { a r : ZMod N}: GatesDef.or 0 a r = (is_bit a ∧ r = a) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem one_or { a r : ZMod N}: Gates.or 1 a r = (is_bit a ∧ r = 1) := by
-  simp [Gates.or]
+theorem one_or { a r : ZMod N}: GatesDef.or 1 a r = (is_bit a ∧ r = 1) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem or_one { a r : ZMod N}: Gates.or a 1 r = (is_bit a ∧ r = 1) := by
-  simp [Gates.or]
+theorem or_one { a r : ZMod N}: GatesDef.or a 1 r = (is_bit a ∧ r = 1) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem is_bit_one_sub {a : ZMod N}: is_bit (Gates.sub 1 a) ↔ is_bit a := by
-  simp [Gates.sub, is_bit, sub_eq_zero]
+theorem is_bit_one_sub {a : ZMod N}: is_bit (GatesDef.sub 1 a) ↔ is_bit a := by
+  simp [GatesDef.sub, is_bit, sub_eq_zero]
   tauto
 
 lemma double_prop {a b c d : Prop} : (b ∧ a ∧ c ∧ a ∧ d) ↔ (b ∧ a ∧ c ∧ d) := by

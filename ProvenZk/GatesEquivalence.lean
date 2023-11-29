@@ -37,8 +37,8 @@ theorem eq_mul_sides (a b out: ZMod N) : b ≠ 0 → ((out = a * b⁻¹) ↔ (ou
 
 @[simp]
 lemma is_bool_equivalence {a : ZMod N} :
-  Gates.is_bool a ↔ a = 0 ∨ a = 1 := by
-  unfold Gates.is_bool
+  GatesDef.is_bool a ↔ a = 0 ∨ a = 1 := by
+  unfold GatesDef.is_bool
   simp
   have : 1-a = 0 ↔ 1-a+a = a := by
     apply Iff.intro
@@ -54,8 +54,8 @@ lemma is_bool_equivalence {a : ZMod N} :
 
 @[simp]
 lemma div_equivalence {a b out : ZMod N} :
-  Gates.div a b out ↔ b ≠ 0 ∧ out = a * (1 / b) := by
-  unfold Gates.div
+  GatesDef.div a b out ↔ b ≠ 0 ∧ out = a * (1 / b) := by
+  unfold GatesDef.div
   rw [and_congr_right_iff]
   intro h
   rw [one_div, eq_mul_sides]
@@ -65,15 +65,15 @@ lemma div_equivalence {a b out : ZMod N} :
 
 @[simp]
 lemma div_unchecked_equivalence {a b out : ZMod N} :
-  Gates.div_unchecked a b out ↔ ((b ≠ 0 ∧ out = a * (1 / b)) ∨ (a = 0 ∧ b = 0 ∧ out = 0)) := by
-  unfold Gates.div_unchecked
-  rw [<-Gates.div]
+  GatesDef.div_unchecked a b out ↔ ((b ≠ 0 ∧ out = a * (1 / b)) ∨ (a = 0 ∧ b = 0 ∧ out = 0)) := by
+  unfold GatesDef.div_unchecked
+  rw [<-GatesDef.div]
   rw [<-div_equivalence]
 
 @[simp]
 lemma inv_equivalence {a out : ZMod N} :
-  Gates.inv a out ↔ a ≠ 0 ∧ out = 1 / a := by
-  unfold Gates.inv
+  GatesDef.inv a out ↔ a ≠ 0 ∧ out = 1 / a := by
+  unfold GatesDef.inv
   rw [one_div, and_congr_right_iff]
   intro h
   conv => rhs; rw [<-mul_one (a := a⁻¹)]; rw [mul_comm]
@@ -84,12 +84,12 @@ lemma inv_equivalence {a out : ZMod N} :
 
 @[simp]
 lemma xor_equivalence {a b out : ZMod N} :
-  Gates.xor a b out ↔
+  GatesDef.xor a b out ↔
   (a = 0 ∧ b = 0 ∧ out = 0) ∨
   (a = 0 ∧ b = 1 ∧ out = 1) ∨
   (a = 1 ∧ b = 0 ∧ out = 1) ∨
   (a = 1 ∧ b = 1 ∧ out = 0) := by
-  unfold Gates.xor
+  unfold GatesDef.xor
   apply Iff.intro
   . intro h
     simp at h
@@ -104,17 +104,17 @@ lemma xor_equivalence {a b out : ZMod N} :
     repeat (
       casesm* (_ ∧ _)
       subst_vars
-      simp [Gates.is_bool]
+      simp [GatesDef.is_bool]
     )
 
 @[simp]
 lemma or_equivalence {a b out : ZMod N} :
-  Gates.or a b out ↔
+  GatesDef.or a b out ↔
   (a = 0 ∧ b = 0 ∧ out = 0) ∨
   (a = 0 ∧ b = 1 ∧ out = 1) ∨
   (a = 1 ∧ b = 0 ∧ out = 1) ∨
   (a = 1 ∧ b = 1 ∧ out = 1) := by
-  unfold Gates.or
+  unfold GatesDef.or
   apply Iff.intro
   . intro h
     simp at h
@@ -129,17 +129,17 @@ lemma or_equivalence {a b out : ZMod N} :
     repeat (
       casesm* (_ ∧ _)
       subst_vars
-      simp [Gates.is_bool]
+      simp [GatesDef.is_bool]
     )
 
 @[simp]
 lemma and_equivalence {a b out : ZMod N} :
-  Gates.and a b out ↔
+  GatesDef.and a b out ↔
   (a = 0 ∧ b = 0 ∧ out = 0) ∨
   (a = 0 ∧ b = 1 ∧ out = 0) ∨
   (a = 1 ∧ b = 0 ∧ out = 0) ∨
   (a = 1 ∧ b = 1 ∧ out = 1) := by
-  unfold Gates.and
+  unfold GatesDef.and
   rw [is_bool_equivalence]
   rw [is_bool_equivalence]
   apply Iff.intro
@@ -161,8 +161,8 @@ lemma and_equivalence {a b out : ZMod N} :
 
 @[simp]
 lemma select_equivalence {b i1 i2 out : ZMod N} :
-  Gates.select b i1 i2 out ↔ (b = 0 ∨ b = 1) ∧ if b = 1 then out = i1 else out = i2 := by
-  unfold Gates.select
+  GatesDef.select b i1 i2 out ↔ (b = 0 ∨ b = 1) ∧ if b = 1 then out = i1 else out = i2 := by
+  unfold GatesDef.select
   rw [is_bool_equivalence]
   apply Iff.intro
   . intro h
@@ -186,8 +186,8 @@ lemma select_equivalence {b i1 i2 out : ZMod N} :
 
 @[simp]
 lemma select_equivalence' {b i1 i2 out : ZMod N} :
-  Gates.select b i1 i2 out ↔ (b = 1 ∧ out = i1) ∨ (b = 0 ∧ out = i2) := by
-  unfold Gates.select
+  GatesDef.select b i1 i2 out ↔ (b = 1 ∧ out = i1) ∨ (b = 0 ∧ out = i2) := by
+  unfold GatesDef.select
   rw [is_bool_equivalence]
   apply Iff.intro
   . intro h
@@ -208,12 +208,12 @@ lemma select_equivalence' {b i1 i2 out : ZMod N} :
 
 @[simp]
 lemma lookup_equivalence {b0 b1 i0 i1 i2 i3 out : ZMod N} :
-  Gates.lookup b0 b1 i0 i1 i2 i3 out ↔
+  GatesDef.lookup b0 b1 i0 i1 i2 i3 out ↔
   (b0 = 0 ∧ b1 = 0 ∧ out = i0) ∨
   (b0 = 1 ∧ b1 = 0 ∧ out = i1) ∨
   (b0 = 0 ∧ b1 = 1 ∧ out = i2) ∨
   (b0 = 1 ∧ b1 = 1 ∧ out = i3) := by
-  unfold Gates.lookup
+  unfold GatesDef.lookup
   rw [is_bool_equivalence]
   rw [is_bool_equivalence]
   apply Iff.intro
@@ -237,8 +237,8 @@ lemma cmp_equivalence : sorry := by sorry -- TODO
 
 @[simp]
 lemma is_zero_equivalence {a out: ZMod N} :
-  Gates.is_zero a out ↔ if a = 0 then out = 1 else out = 0 := by
-  unfold Gates.is_zero
+  GatesDef.is_zero a out ↔ if a = 0 then out = 1 else out = 0 := by
+  unfold GatesDef.is_zero
   rw [one_div, mul_comm]
   apply Iff.intro
   . intro h
@@ -263,8 +263,8 @@ lemma is_zero_equivalence {a out: ZMod N} :
 
 @[simp]
 lemma is_zero_equivalence' {a out: ZMod N} :
-  Gates.is_zero a out ↔ (a = 0 ∧ out = 1) ∨ (a ≠ 0 ∧ out = 0) := by
-  unfold Gates.is_zero
+  GatesDef.is_zero a out ↔ (a = 0 ∧ out = 1) ∨ (a ≠ 0 ∧ out = 0) := by
+  unfold GatesDef.is_zero
   rw [one_div, mul_comm]
   apply Iff.intro
   . intro h
