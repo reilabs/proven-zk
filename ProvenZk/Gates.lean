@@ -81,7 +81,7 @@ structure Gates_base (α : Type) : Type where
   to_binary : α → (n : Nat) → Vector α n → Prop
   from_binary : Vector α d → α → Prop
 
-def GatesGnark_8 {N : Nat} [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
+def GatesGnark_8 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
   is_bool := GatesDef.is_bool,
   add := GatesDef.add,
   mul_acc := GatesDef.mul_acc,
@@ -105,6 +105,6 @@ def GatesGnark_8 {N : Nat} [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
   from_binary := GatesDef.from_binary
 }
 
-def GatesGnark_9 {N : Nat} [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
-  GatesGnark_8 with cmp := GatesDef.cmp_9
+def GatesGnark_9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
+  GatesGnark_8 N with cmp := GatesDef.cmp_9
 }
