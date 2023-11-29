@@ -1,3 +1,4 @@
+import Init.Prelude
 import Mathlib.Data.ZMod.Defs
 import Mathlib.Init.Data.Nat.Bitwise
 
@@ -27,331 +28,85 @@ def lookup (b0 b1 i0 i1 i2 i3 out : ZMod N): Prop := is_bool b0 ∧ is_bool b1 �
   (b0 = 0 ∧ b1 = 1 ∧ out = i2) ∨
   (b0 = 1 ∧ b1 = 1 ∧ out = i3)
 )-/
-def cmp (a b : ZMod N) (out : ZMod N): Prop := (a = b ∧ out = 0) ∨
+def cmp_8 (a b out : ZMod N): Prop :=
+  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) % N = a.val) ∧
+  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) % N = b.val) ∧
+  ((a = b ∧ out = 0) ∨
   (ZMod.val a < ZMod.val b ∧ out = -1) ∨
-  (ZMod.val a > ZMod.val b ∧ out = 1)
-/-
-let size := binary_length N
-fin_to_bits_le (a, size)
-fin_to_bits_le (b, size)
--/
+  (ZMod.val a > ZMod.val b ∧ out = 1))
+
+def cmp_9 (a b out : ZMod N): Prop :=
+  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) = a.val) ∧
+  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) = b.val) ∧
+  ((a = b ∧ out = 0) ∨
+  (ZMod.val a < ZMod.val b ∧ out = -1) ∨
+  (ZMod.val a > ZMod.val b ∧ out = 1))
+
+-- Inverse is calculated using a Hint at circuit execution
 def is_zero (a out: ZMod N): Prop := (a ≠ 0 ∧ out = 1-(a*(1/a))) ∨ (a = 0 ∧ out = 1)  -- (a = 0 ∧ out = 1) ∨ (a != 0 ∧ out = 0)
 def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
-def le (a b : ZMod N): Prop := ZMod.val a <= ZMod.val b
-def to_binary (a : ZMod N) (n : Nat) (out : Vector (ZMod N) n): Prop := (recover_binary_zmod' out : ZMod N) = a ∧ is_vector_binary out
-def from_binary {d} (a : Vector (ZMod N) d) (out : ZMod N): Prop := (recover_binary_zmod' a : ZMod N) = out
+def le (a b : ZMod N): Prop :=
+  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) % N = a.val) ∧
+  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) % N = b.val) ∧
+  ZMod.val a <= ZMod.val b
+-- `a(.val)` is always less than `N` because it's `ZMod`.
+-- If `a` doesn't fit in `n`, then the result of `recover_binary_zmod'` is `a % 2^n`
+-- If `a` fits `n`, the result is exact
+def to_binary (a : ZMod N) (d : Nat) (out : Vector (ZMod N) d): Prop :=
+  (@recover_binary_zmod' d N out).val = (a.val % 2^d) ∧ is_vector_binary out
+def from_binary {d} (a : Vector (ZMod N) d) (out : ZMod N) : Prop :=
+  (@recover_binary_zmod' d N a).val = (out.val % 2^d)
 end Gates
 
-
-namespace GatesEquivalence
 variable {N : Nat}
 variable [Fact (Nat.Prime N)]
 
-theorem zmod_symm {n} {a b : ZMod n} : a = b ↔ b = a := by
-  tauto
+structure Gates_base (α : Type) : Type where
+  is_bool : α → Prop
+  add : α → α → α
+  mul_acc : α → α → α → α
+  neg : α → α
+  sub : α → α → α
+  mul : α → α → α
+  div_unchecked : α → α → α → Prop
+  div : α → α → α → Prop
+  inv : α → α → Prop
+  xor : α → α → α → Prop
+  or : α → α → α → Prop
+  and : α → α → α → Prop
+  select : α → α → α → α → Prop
+  lookup : α → α → α → α → α → α → α → Prop
+  cmp : α → α → α → Prop
+  is_zero : α → α → Prop
+  eq : α → α → Prop
+  ne : α → α → Prop
+  le : α → α → Prop
+  to_binary : α → (n : Nat) → Vector α n → Prop
+  from_binary : Vector α d → α → Prop
 
-theorem mul_inv_cancel_aux_copy (a : ZMod N) (h : a ≠ 0) : a * a⁻¹ = 1 := by
-  obtain ⟨k, rfl⟩ := ZMod.nat_cast_zmod_surjective a
-  apply ZMod.coe_mul_inv_eq_one
-  apply Nat.Coprime.symm
-  rwa [Nat.Prime.coprime_iff_not_dvd Fact.out, ← CharP.cast_eq_zero_iff (ZMod N)]
+def GatesGnark_8 : Gates_base (ZMod N) := {
+  is_bool := Gates.is_bool,
+  add := Gates.add,
+  mul_acc := Gates.mul_acc,
+  neg := Gates.neg,
+  sub := Gates.sub,
+  mul := Gates.mul,
+  div_unchecked := Gates.div_unchecked,
+  div := Gates.div,
+  inv := Gates.inv,
+  xor := Gates.xor,
+  or := Gates.or,
+  and := Gates.and,
+  select := Gates.select,
+  lookup := Gates.lookup,
+  cmp := Gates.cmp_8,
+  is_zero := Gates.is_zero,
+  eq := Gates.eq,
+  ne := Gates.ne,
+  le := Gates.le,
+  to_binary := Gates.to_binary,
+  from_binary := Gates.from_binary
+}
 
-theorem eq_mul_sides (a b out: ZMod N) : b ≠ 0 → ((out = a * b⁻¹) ↔ (out*b = a*(b⁻¹)*b)) := by
-    intro
-    apply Iff.intro
-    . intro h
-      rw [h]
-    . intro h
-      simp at h
-      cases h
-      . tauto
-      . contradiction
-
-theorem inv_self_eq_one (a : ZMod N) : a ≠ 0 → (a⁻¹) * a = 1 := by
-  intro h
-  simp [mul_comm]
-  apply mul_inv_cancel_aux_copy
-  tauto
-
-@[simp]
-lemma is_bool_equivalence {a : ZMod N} :
-  Gates.is_bool a ↔ a = 0 ∨ a = 1 := by
-  unfold Gates.is_bool
-  simp
-  have : 1-a = 0 ↔ 1-a+a = a := by
-    apply Iff.intro
-    . intro h
-      rw [h]
-      simp
-    . intro h
-      rw [add_left_eq_self] at h
-      simp [h]
-  rw [this]
-  conv => lhs; arg 1; simp; rw [zmod_symm]
-  tauto
-
-@[simp]
-lemma div_equivalence {a b out : ZMod N} :
-  Gates.div a b out ↔ b ≠ 0 ∧ out = a * (1 / b) := by
-  unfold Gates.div
-  rw [and_congr_right_iff]
-  intro h
-  rw [one_div, eq_mul_sides]
-  rw [mul_assoc, inv_self_eq_one, mul_one]
-  . tauto
-  . tauto
-
-@[simp]
-lemma div_unchecked_equivalence {a b out : ZMod N} :
-  Gates.div_unchecked a b out ↔ ((b ≠ 0 ∧ out = a * (1 / b)) ∨ (a = 0 ∧ b = 0 ∧ out = 0)) := by
-  unfold Gates.div_unchecked
-  rw [<-Gates.div]
-  rw [<-div_equivalence]
-
-@[simp]
-lemma inv_equivalence {a out : ZMod N} :
-  Gates.inv a out ↔ a ≠ 0 ∧ out = 1 / a := by
-  unfold Gates.inv
-  rw [one_div, and_congr_right_iff]
-  intro h
-  conv => rhs; rw [<-mul_one (a := a⁻¹)]; rw [mul_comm]
-  rw [eq_mul_sides]
-  rw [mul_assoc, inv_self_eq_one, mul_one]
-  . tauto
-  . tauto
-
-@[simp]
-lemma xor_equivalence {a b out : ZMod N} :
-  Gates.xor a b out ↔
-  (a = 0 ∧ b = 0 ∧ out = 0) ∨
-  (a = 0 ∧ b = 1 ∧ out = 1) ∨
-  (a = 1 ∧ b = 0 ∧ out = 1) ∨
-  (a = 1 ∧ b = 1 ∧ out = 0) := by
-  unfold Gates.xor
-  apply Iff.intro
-  . intro h
-    simp at h
-    casesm* (_ ∧ _)
-    rename_i ha hb _
-    cases ha <;> cases hb <;> {
-      subst_vars
-      simp
-    }
-  . intro h
-    casesm* (_ ∨ _)
-    repeat (
-      casesm* (_ ∧ _)
-      subst_vars
-      simp [Gates.is_bool]
-    )
-
-@[simp]
-lemma or_equivalence {a b out : ZMod N} :
-  Gates.or a b out ↔
-  (a = 0 ∧ b = 0 ∧ out = 0) ∨
-  (a = 0 ∧ b = 1 ∧ out = 1) ∨
-  (a = 1 ∧ b = 0 ∧ out = 1) ∨
-  (a = 1 ∧ b = 1 ∧ out = 1) := by
-  unfold Gates.or
-  apply Iff.intro
-  . intro h
-    simp at h
-    casesm* (_ ∧ _)
-    rename_i ha hb _
-    cases ha <;> cases hb <;> {
-      subst_vars
-      simp
-    }
-  . intro h
-    casesm* (_ ∨ _)
-    repeat (
-      casesm* (_ ∧ _)
-      subst_vars
-      simp [Gates.is_bool]
-    )
-
-@[simp]
-lemma and_equivalence {a b out : ZMod N} :
-  Gates.and a b out ↔
-  (a = 0 ∧ b = 0 ∧ out = 0) ∨
-  (a = 0 ∧ b = 1 ∧ out = 0) ∨
-  (a = 1 ∧ b = 0 ∧ out = 0) ∨
-  (a = 1 ∧ b = 1 ∧ out = 1) := by
-  unfold Gates.and
-  rw [is_bool_equivalence]
-  rw [is_bool_equivalence]
-  apply Iff.intro
-  . intro h
-    simp at h
-    casesm* (_ ∧ _)
-    rename_i ha hb _
-    cases ha <;> cases hb <;> {
-      subst_vars
-      simp
-    }
-  . intro h
-    casesm* (_ ∨ _)
-    repeat (
-      casesm* (_ ∧ _)
-      subst_vars
-      simp
-    )
-
-@[simp]
-lemma select_equivalence {b i1 i2 out : ZMod N} :
-  Gates.select b i1 i2 out ↔ (b = 0 ∨ b = 1) ∧ if b = 1 then out = i1 else out = i2 := by
-  unfold Gates.select
-  rw [is_bool_equivalence]
-  apply Iff.intro
-  . intro h
-    casesm* (_ ∧ _)
-    rename_i hb _
-    cases hb
-    repeat (
-      subst_vars
-      simp
-    )
-  . intro h
-    casesm* (_ ∧ _)
-    rename_i hb hout
-    cases hb
-    repeat (
-      subst_vars
-      simp
-      simp at hout
-      tauto
-    )
-
-@[simp]
-lemma select_equivalence' {b i1 i2 out : ZMod N} :
-  Gates.select b i1 i2 out ↔ (b = 1 ∧ out = i1) ∨ (b = 0 ∧ out = i2) := by
-  unfold Gates.select
-  rw [is_bool_equivalence]
-  apply Iff.intro
-  . intro h
-    casesm* (_ ∧ _)
-    rename_i hb _
-    cases hb
-    repeat (
-      subst_vars
-      simp
-    )
-  . intro h
-    casesm* (_ ∨ _)
-    repeat (
-      casesm* (_ ∧ _)
-      subst_vars
-      simp
-    )
-
-@[simp]
-lemma lookup_equivalence {b0 b1 i0 i1 i2 i3 out : ZMod N} :
-  Gates.lookup b0 b1 i0 i1 i2 i3 out ↔
-  (b0 = 0 ∧ b1 = 0 ∧ out = i0) ∨
-  (b0 = 1 ∧ b1 = 0 ∧ out = i1) ∨
-  (b0 = 0 ∧ b1 = 1 ∧ out = i2) ∨
-  (b0 = 1 ∧ b1 = 1 ∧ out = i3) := by
-  unfold Gates.lookup
-  rw [is_bool_equivalence]
-  rw [is_bool_equivalence]
-  apply Iff.intro
-  . intro h
-    casesm* (_ ∧ _)
-    rename_i hb0 hb1 _
-    cases hb0 <;> cases hb1 <;> {
-      subst_vars
-      simp [add_assoc]
-    }
-  . intro h
-    casesm* (_ ∨ _)
-    repeat (
-      casesm* (_ ∧ _)
-      subst_vars
-      simp [add_assoc]
-    )
-
-@[simp]
-lemma cmp_equivalence : sorry := by sorry -- TODO
-
-@[simp]
-lemma is_zero_equivalence {a out: ZMod N} :
-  Gates.is_zero a out ↔ if a = 0 then out = 1 else out = 0 := by
-  unfold Gates.is_zero
-  rw [one_div, mul_comm]
-  apply Iff.intro
-  . intro h
-    casesm* (_ ∨ _)
-    . casesm* (_ ∧ _)
-      subst_vars
-      rename_i h
-      . simp [h]
-    . casesm* (_ ∧ _)
-      subst_vars
-      simp
-  . intro h
-    if a = 0 then
-      subst_vars
-      simp at h
-      tauto
-    else
-      rename_i ha
-      simp [ha] at h
-      simp [ha]
-      tauto
-
-@[simp]
-lemma is_zero_equivalence' {a out: ZMod N} :
-  Gates.is_zero a out ↔ (a = 0 ∧ out = 1) ∨ (a ≠ 0 ∧ out = 0) := by
-  unfold Gates.is_zero
-  rw [one_div, mul_comm]
-  apply Iff.intro
-  . intro h
-    casesm* (_ ∨ _)
-    . casesm* (_ ∧ _)
-      subst_vars
-      rw [inv_self_eq_one, sub_self]
-      . tauto
-      . tauto
-    . casesm* (_ ∧ _)
-      subst_vars
-      simp
-  . intro h
-    casesm* (_ ∨ _)
-    . casesm* (_ ∧ _)
-      subst_vars
-      simp
-    . casesm* (_ ∧ _)
-      subst_vars
-      rw [inv_self_eq_one, sub_self]
-      . tauto
-      . tauto
-
-@[simp]
-lemma le_equivalence : sorry := by sorry -- TODO
-
-@[simp]
-lemma to_binary_equivalence : sorry := by sorry -- TODO
-
-@[simp]
-lemma from_binary_equivalence : sorry := by sorry -- TODO
-
-end GatesEquivalence
-
-/-
-Goal : calling Gates.cmp and Lean automatically switching between different implementations
-of the gate depending on gnark versions.
-The gnark version is determined by the extractor.
-Use typeclasses
--/
-namespace Ex
-variable {N : Nat}
-variable [Fact (Nat.Prime N)]
-
-class Cmp (a : Type) where
-  cmp : a → a → a → Prop
-
-instance : Cmp (ZMod N) where
-  cmp := Gates.cmp
-
-end Ex
+--def GatesGnark_9 := { GatesGnark_8 with cmp := Gates.cmp_9  }

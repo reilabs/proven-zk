@@ -60,6 +60,14 @@ def nat_to_bits_le (l : Nat): Nat → Option (Vector Bit l) := match l with
     let xs ← nat_to_bits_le l x
     some (y ::ᵥ xs)
 
+def nat_to_bits_le_full_n (l : Nat): Nat → Vector Bit l := match l with
+  | 0 => fun _ => Vector.nil
+  | Nat.succ l => fun i =>
+    let x := i / 2
+    let y := bit_mod_two i
+    let xs := nat_to_bits_le_full_n l x
+    y ::ᵥ xs
+
 def nat_to_bits_le_full : Nat → List Bit
   | 0 => [0]
   | 1 => [1]
@@ -167,6 +175,9 @@ lemma bit_to_zmod_to_bit {n : Nat} [Fact (n > 1)] {x : Bit}:
 def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
   Vector.map zmod_to_bit a
 
+def vector_bit_to_zmod {n d : Nat} (a : Vector Bit d) : Vector (ZMod n) d :=
+  Vector.map (fun x => Bit.toZMod x) a
+
 lemma vector_zmod_to_bit_last {n d : Nat} {xs : Vector (ZMod n) (d+1)} :
   (vector_zmod_to_bit xs).last = (zmod_to_bit xs.last) := by
   simp [vector_zmod_to_bit, Vector.last]
@@ -214,6 +225,9 @@ def recover_binary_zmod {d n} (rep : Vector Bit d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head.toZMod + 2 * recover_binary_zmod rep.tail
 
+-- `rep` is the bit representation using `ZMod n` values
+-- Elements of `rep` should be `0` or `1`, but it should be constrained externally using
+-- `is_vector_binary` function
 def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head + 2 * recover_binary_zmod' rep.tail
