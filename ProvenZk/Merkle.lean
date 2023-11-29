@@ -280,7 +280,7 @@ def recover {depth : Nat} {F: Type} (H : Hash F 2) (ix : Vector Dir depth) (proo
 
 theorem equal_recover_equal_tree {depth : Nat} {F: Type} (H : Hash F 2)
   (ix : Vector Dir depth) (proof : Vector F depth) (item₁ : F) (item₂ : F)
-  [Fact (perfect_hash H)]
+  [Fact (CollisionResistant H)]
   :
   (recover H ix proof item₁ = recover H ix proof item₂) ↔ (item₁ = item₂) := by
   apply Iff.intro
@@ -474,7 +474,7 @@ theorem proof_ceritfies_item
   {depth : Nat}
   {F: Type}
   {H: Hash F 2}
-  [Fact (perfect_hash H)]
+  [Fact (CollisionResistant H)]
   (ix : Vector Dir depth)
   (tree : MerkleTree F H depth)
   (proof : Vector F depth)
@@ -502,7 +502,7 @@ theorem proof_insert_invariant
   {depth : Nat}
   {F: Type}
   {H: Hash F 2}
-  [Fact (perfect_hash H)]
+  [Fact (CollisionResistant H)]
   (ix : Vector Dir depth)
   (tree : MerkleTree F H depth)
   (old new : F)
@@ -523,7 +523,7 @@ theorem proof_insert_invariant
       simp [*]
     }
 
-theorem recover_proof_reversible {H : Hash α 2} [Fact (perfect_hash H)] {Tree : MerkleTree α H d} {Proof : Vector α d}:
+theorem recover_proof_reversible {H : Hash α 2} [Fact (CollisionResistant H)] {Tree : MerkleTree α H d} {Proof : Vector α d}:
   recover H Index Proof Item = Tree.root →
   Tree.proof Index = Proof := by
   induction d with
@@ -537,7 +537,7 @@ theorem recover_proof_reversible {H : Hash α 2} [Fact (perfect_hash H)] {Tree :
     simp [root, recover, proof]
     intro h
     split at h <;> {
-      have : perfect_hash H := (inferInstance : Fact (perfect_hash H)).out
+      have : CollisionResistant H := (inferInstance : Fact (CollisionResistant H)).out
       have := this h
       rw [Vector.vector_eq_cons, Vector.vector_eq_cons] at this
       casesm* (_ ∧ _)
@@ -551,7 +551,7 @@ theorem recover_proof_reversible {H : Hash α 2} [Fact (perfect_hash H)] {Tree :
 theorem recover_equivalence
   {F depth}
   (H : Hash F 2)
-  [Fact (perfect_hash H)]
+  [Fact (CollisionResistant H)]
   (tree : MerkleTree F H depth)
   (Path : Vector Dir depth)
   (Proof : Vector F depth)
@@ -572,7 +572,7 @@ theorem recover_equivalence
     . apply recover_proof_reversible (Item := Item)
       assumption
 
-theorem eq_root_eq_tree {H} [ph: Fact (perfect_hash H)] {t₁ t₂ : MerkleTree α H d}:
+theorem eq_root_eq_tree {H} [ph: Fact (CollisionResistant H)] {t₁ t₂ : MerkleTree α H d}:
   t₁.root = t₂.root ↔ t₁ = t₂ := by
   induction d with
   | zero => cases t₁; cases t₂; tauto
@@ -594,7 +594,7 @@ theorem eq_root_eq_tree {H} [ph: Fact (perfect_hash H)] {t₁ t₂ : MerkleTree 
 lemma proof_of_set_is_proof
   {F d}
   (H : Hash F 2)
-  [Fact (perfect_hash H)]
+  [Fact (CollisionResistant H)]
   (Tree : MerkleTree F H d)
   (ix : Vector Dir d)
   (item : F):
@@ -638,7 +638,7 @@ lemma proof_of_set_is_proof
 lemma proof_of_set_fin
   {F d}
   (H : Hash F 2)
-  [Fact (perfect_hash H)]
+  [Fact (CollisionResistant H)]
   (Tree : MerkleTree F H d)
   (ix : Fin (2^d))
   (item : F):
