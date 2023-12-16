@@ -47,6 +47,48 @@ lemma split_vector_eq_cons {x : α} {xs : Vector α d} {y : Vector α d.succ} :
     rw [hx, hxs]
     simp
 
+def nat_to_binary_self {d : Nat} {h : d >= 1} :
+  recover_binary_nat (nat_to_bits_le_full_n d x) = x % 2^d := by
+  induction d generalizing x with
+  | zero =>
+    contradiction
+  | succ d' ih =>
+    simp [recover_binary_nat, nat_to_bits_le_full_n]
+    have : recover_binary_nat (nat_to_bits_le_full_n d' (x / 2)) = (x/2) % 2^d' := by
+      if 1 <= d' then
+        rw [ih (x := x/2)]
+        rw [Nat.succ_eq_add_one] at h
+        rw [ge_iff_le, le_add_iff_nonneg_left] at h
+        linarith
+      else
+        have : d' = 0 := by
+          linarith
+        subst_vars
+        simp [nat_to_bits_le_full_n, recover_binary_nat, Nat.mod_one]
+    rw [this]
+    rw [<-Nat.div2_val]
+    simp [bit_mod_two]
+    split
+    . rename_i h
+      simp only [Bit.toNat]
+      rw [Nat.mod_pow_succ]
+      rw [<-Nat.div2_val]
+      rw [h]
+      simp_arith
+    . rename_i h
+      simp only [Bit.toNat]
+      rw [Nat.mod_pow_succ]
+      rw [<-Nat.div2_val]
+      rw [h]
+      simp_arith
+    . rename_i h
+      apply False.elim (by
+        have := Nat.mod_lt x (y := 2)
+        rw [h] at this
+        simp at this
+        contradiction
+      )
+
 @[simp]
 lemma is_bool_equivalence {a : ZMod N} :
   GatesDef.is_bool a ↔ a = 0 ∨ a = 1 := by
@@ -306,48 +348,6 @@ lemma is_zero_equivalence' {a out: ZMod N} :
 lemma le_equivalence {a b : ZMod N} :
   GatesDef.le_9 a b ↔ a.val < b.val := by
   sorry -- TODO
-
-def nat_to_binary_self {d : Nat} {h : d >= 1} :
-  recover_binary_nat (nat_to_bits_le_full_n d x) = x % 2^d := by
-  induction d generalizing x with
-  | zero =>
-    contradiction
-  | succ d' ih =>
-    simp [recover_binary_nat, nat_to_bits_le_full_n]
-    have : recover_binary_nat (nat_to_bits_le_full_n d' (x / 2)) = (x/2) % 2^d' := by
-      if 1 <= d' then
-        rw [ih (x := x/2)]
-        rw [Nat.succ_eq_add_one] at h
-        rw [ge_iff_le, le_add_iff_nonneg_left] at h
-        linarith
-      else
-        have : d' = 0 := by
-          linarith
-        subst_vars
-        simp [nat_to_bits_le_full_n, recover_binary_nat, Nat.mod_one]
-    rw [this]
-    rw [<-Nat.div2_val]
-    simp [bit_mod_two]
-    split
-    . rename_i h
-      simp only [Bit.toNat]
-      rw [Nat.mod_pow_succ]
-      rw [<-Nat.div2_val]
-      rw [h]
-      simp_arith
-    . rename_i h
-      simp only [Bit.toNat]
-      rw [Nat.mod_pow_succ]
-      rw [<-Nat.div2_val]
-      rw [h]
-      simp_arith
-    . rename_i h
-      apply False.elim (by
-        have := Nat.mod_lt x (y := 2)
-        rw [h] at this
-        simp at this
-        contradiction
-      )
 
 -- Should `hd : 2^d < N` be a hypothesis?
 @[simp]
