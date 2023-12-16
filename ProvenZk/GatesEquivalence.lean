@@ -47,22 +47,19 @@ lemma split_vector_eq_cons {x : α} {xs : Vector α d} {y : Vector α d.succ} :
     rw [hx, hxs]
     simp
 
-def nat_to_binary_self {d : Nat} {h : d >= 1} :
+def nat_to_binary_self {d : Nat} :
   recover_binary_nat (nat_to_bits_le_full_n d x) = x % 2^d := by
   induction d generalizing x with
   | zero =>
-    contradiction
+    simp [recover_binary_nat, nat_to_bits_le_full_n, Nat.mod_one]
   | succ d' ih =>
     simp [recover_binary_nat, nat_to_bits_le_full_n]
     have : recover_binary_nat (nat_to_bits_le_full_n d' (x / 2)) = (x/2) % 2^d' := by
-      if 1 <= d' then
+      if d' >= 1 then
         rw [ih (x := x/2)]
-        rw [Nat.succ_eq_add_one] at h
-        rw [ge_iff_le, le_add_iff_nonneg_left] at h
-        linarith
       else
-        have : d' = 0 := by
-          linarith
+        rename_i h
+        simp at h
         subst_vars
         simp [nat_to_bits_le_full_n, recover_binary_nat, Nat.mod_one]
     rw [this]
@@ -346,8 +343,25 @@ lemma is_zero_equivalence' {a out: ZMod N} :
 
 @[simp]
 lemma le_equivalence {a b : ZMod N} :
-  GatesDef.le_9 a b ↔ a.val < b.val := by
-  sorry -- TODO
+  GatesDef.le_9 a b ↔ a.val <= b.val := by
+  unfold GatesDef.le_9
+  apply Iff.intro
+  . intro h
+    tauto
+  . intro h
+    refine ⟨?_, ?_, ?_⟩
+    . rw [nat_to_binary_self]
+      -- 2^(binary_length N)
+      -- iff 2^(binary_length N) > N
+      have : 2^(binary_length N) > N := by
+        sorry
+      rw [<-ZMod.val_nat_cast]
+      rw [ZMod.val_nat_cast_of_lt]
+      .
+        sorry
+    . rw [nat_to_binary_self]
+      sorry
+    . tauto
 
 -- Should `hd : 2^d < N` be a hypothesis?
 @[simp]
@@ -370,8 +384,6 @@ lemma to_binary_equivalence {a : ZMod N} {d : Nat} {out : Vector (ZMod N) d} (hd
           rw [bit_to_zmod_equiv]
           rw [h]
           simp [hbin]
-        . rw [<-Nat.add_one]
-          linarith
     . rw [<-@binary_zmod_same_as_nat (n := N) (d := d) (rep := vector_zmod_to_bit out)]
       . apply ZMod.val_lt
       . simp [hd]
@@ -398,14 +410,13 @@ lemma to_binary_equivalence {a : ZMod N} {d : Nat} {out : Vector (ZMod N) d} (hd
           rw [<-bit_to_zmod_equiv]
           . rw [h]
           . simp [hbin]
-        . rw [<-Nat.add_one]
-          linarith
     . simp [hbin]
     . rw [<-@binary_zmod_same_as_nat (n := N) (d := d) (rep := vector_zmod_to_bit out)]
       . apply ZMod.val_lt
       . simp [hd]
     . simp [hbin]
 
+-- Should `hd : 2^d < N` be a hypothesis?
 @[simp]
 lemma from_binary_equivalence {d} {a : Vector (ZMod N) d} {out : ZMod N} (hd : 2^d < N)  :
   GatesDef.from_binary a out ↔ vector_bit_to_zmod (nat_to_bits_le_full_n d out.val) = a := by
