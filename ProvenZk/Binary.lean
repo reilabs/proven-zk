@@ -178,6 +178,50 @@ def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
 def vector_bit_to_zmod {n d : Nat} (a : Vector Bit d) : Vector (ZMod n) d :=
   Vector.map (fun x => Bit.toZMod x) a
 
+lemma bit_to_zmod_equiv {d} [Fact (n > 1)] (x : Vector Bit d) (y : Vector (ZMod n) d) (h : is_vector_binary y):
+  vector_bit_to_zmod x = y ↔ x = vector_zmod_to_bit y := by
+  apply Iff.intro
+  . intro hv
+    rename_i d
+    rw [<-hv]
+    induction x, y using Vector.inductionOn₂ with
+    | nil => simp
+    | cons ih=>
+      rename_i x y xs ys
+      simp [vector_bit_to_zmod, vector_zmod_to_bit]
+      simp [Vector.vector_eq_cons]
+      refine ⟨?_, ?_⟩
+      . simp [bit_to_zmod_to_bit]
+      . rw [<-vector_bit_to_zmod, <-vector_zmod_to_bit]
+        apply ih
+        . simp [is_vector_binary_cons] at h
+          tauto
+        . simp [vector_bit_to_zmod] at hv
+          simp [Vector.vector_eq_cons] at hv
+          rw [<-vector_bit_to_zmod] at hv
+          tauto
+  . intro hv
+    rename_i d
+    rw [hv]
+    induction x, y using Vector.inductionOn₂ with
+    | nil => simp
+    | cons ih=>
+      rename_i x y xs ys
+      simp [vector_bit_to_zmod, vector_zmod_to_bit]
+      simp [Vector.vector_eq_cons]
+      refine ⟨?_, ?_⟩
+      . rw [zmod_to_bit_to_zmod]
+        . simp [is_vector_binary_cons] at h
+          tauto
+      . rw [<-vector_bit_to_zmod, <-vector_zmod_to_bit]
+        apply ih
+        . simp [is_vector_binary_cons] at h
+          tauto
+        . simp [vector_zmod_to_bit] at hv
+          simp [Vector.vector_eq_cons] at hv
+          rw [<-vector_zmod_to_bit] at hv
+          tauto
+
 lemma vector_zmod_to_bit_last {n d : Nat} {xs : Vector (ZMod n) (d+1)} :
   (vector_zmod_to_bit xs).last = (zmod_to_bit xs.last) := by
   simp [vector_zmod_to_bit, Vector.last]
@@ -297,19 +341,21 @@ lemma parity_bit_unique (a b : Bit) (c d : Nat) : a + 2 * c = b + 2 * d -> a = b
   . assumption
 
 theorem binary_nat_unique {d} (rep1 rep2 : Vector Bit d):
-  recover_binary_nat rep1 = recover_binary_nat rep2 -> rep1 = rep2 := by
-  intro h
-  induction d with
-  | zero => apply Vector.zero_subsingleton.allEq;
-  | succ d1 ih =>
-    simp [recover_binary_nat] at h
-    rw [←Vector.cons_head_tail rep1]
-    rw [←Vector.cons_head_tail rep2]
-    have h := parity_bit_unique _ _ _ _ h
-    cases h
-    apply congr
-    . apply congrArg; assumption
-    . apply ih; assumption
+  recover_binary_nat rep1 = recover_binary_nat rep2 ↔ rep1 = rep2 := by
+  apply Iff.intro
+  . intro h
+    induction d with
+    | zero => apply Vector.zero_subsingleton.allEq;
+    | succ d1 ih =>
+      simp [recover_binary_nat] at h
+      rw [←Vector.cons_head_tail rep1]
+      rw [←Vector.cons_head_tail rep2]
+      have h := parity_bit_unique _ _ _ _ h
+      cases h
+      apply congr
+      . apply congrArg; assumption
+      . apply ih; assumption
+  . tauto
 
 theorem binary_nat_lt {d} (rep : Vector Bit d): recover_binary_nat rep < 2 ^ d := by
   induction d with
@@ -363,7 +409,8 @@ theorem binary_zmod_unique {n d} (rep1 rep2 : Vector Bit d):
     rw [same_recs]
   rw [binary_zmod_same_as_nat rep1 d_small] at same_vals
   rw [binary_zmod_same_as_nat rep2 d_small] at same_vals
-  exact binary_nat_unique _ _ same_vals
+  simp [binary_nat_unique] at same_vals
+  tauto
 
 theorem recover_binary_nat_to_bits_le {w : Vector Bit d}:
   recover_binary_nat w = v ↔
@@ -646,7 +693,8 @@ theorem fin_to_bits_le_recover_binary_nat {v : Vector Bit d}:
   split
   . rename_i h
     rw [←recover_binary_nat_to_bits_le] at h
-    exact binary_nat_unique _ _ h
+    simp [binary_nat_unique] at h
+    tauto
   . contradiction
 
 theorem SubVector_map_cast_lower {v : SubVector α n prop} {f : α → β }:

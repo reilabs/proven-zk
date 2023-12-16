@@ -35,6 +35,18 @@ theorem eq_mul_sides (a b out: ZMod N) : b ≠ 0 → ((out = a * b⁻¹) ↔ (ou
       . tauto
       . contradiction
 
+lemma split_vector_eq_cons {x : α} {xs : Vector α d} {y : Vector α d.succ} :
+  x ::ᵥ xs = y ↔ x = y.head ∧ xs = y.tail := by
+  apply Iff.intro
+  . intro h
+    rw [<-h]
+    simp
+  . intro h
+    casesm* (_ ∧ _)
+    rename_i hx hxs
+    rw [hx, hxs]
+    simp
+
 @[simp]
 lemma is_bool_equivalence {a : ZMod N} :
   GatesDef.is_bool a ↔ a = 0 ∨ a = 1 := by
@@ -233,7 +245,9 @@ lemma lookup_equivalence {b0 b1 i0 i1 i2 i3 out : ZMod N} :
     )
 
 @[simp]
-lemma cmp_equivalence : sorry := by sorry -- TODO
+lemma cmp_equivalence {a b out : ZMod N} :
+  GatesDef.cmp_9 a b out ↔ if a = b then out = 0 else (if a.val < b.val then out = -1 else out = 1) := by
+  sorry -- TODO
 
 @[simp]
 lemma is_zero_equivalence {a out: ZMod N} :
@@ -289,12 +303,114 @@ lemma is_zero_equivalence' {a out: ZMod N} :
       . tauto
 
 @[simp]
-lemma le_equivalence : sorry := by sorry -- TODO
+lemma le_equivalence {a b : ZMod N} :
+  GatesDef.le_9 a b ↔ a.val < b.val := by
+  sorry -- TODO
+
+def nat_to_binary_self {d : Nat} {h : d >= 1} :
+  recover_binary_nat (nat_to_bits_le_full_n d x) = x % 2^d := by
+  induction d generalizing x with
+  | zero =>
+    contradiction
+  | succ d' ih =>
+    simp [recover_binary_nat, nat_to_bits_le_full_n]
+    have : recover_binary_nat (nat_to_bits_le_full_n d' (x / 2)) = (x/2) % 2^d' := by
+      if 1 <= d' then
+        rw [ih (x := x/2)]
+        rw [Nat.succ_eq_add_one] at h
+        rw [ge_iff_le, le_add_iff_nonneg_left] at h
+        linarith
+      else
+        have : d' = 0 := by
+          linarith
+        subst_vars
+        simp [nat_to_bits_le_full_n, recover_binary_nat, Nat.mod_one]
+    rw [this]
+    rw [<-Nat.div2_val]
+    simp [bit_mod_two]
+    split
+    . rename_i h
+      simp only [Bit.toNat]
+      rw [Nat.mod_pow_succ]
+      rw [<-Nat.div2_val]
+      rw [h]
+      simp_arith
+    . rename_i h
+      simp only [Bit.toNat]
+      rw [Nat.mod_pow_succ]
+      rw [<-Nat.div2_val]
+      rw [h]
+      simp_arith
+    . rename_i h
+      apply False.elim (by
+        have := Nat.mod_lt x (y := 2)
+        rw [h] at this
+        simp at this
+        contradiction
+      )
+
+-- Should `hd : 2^d < N` be a hypothesis?
+@[simp]
+lemma to_binary_equivalence {a : ZMod N} {d : Nat} {out : Vector (ZMod N) d} (hd : 2^d < N) :
+  GatesDef.to_binary a d out ↔ vector_bit_to_zmod (nat_to_bits_le_full_n d a.val) = out := by
+  apply Iff.intro
+  . intro h
+    unfold GatesDef.to_binary at h
+    casesm* (_ ∧ _)
+    rename_i h hbin
+    rw [recover_binary_zmod_bit] at h
+    rw [binary_nat_zmod_equiv_mod_p] at h
+    rw [<-ZMod.val_nat_cast] at h
+    rw [ZMod.val_nat_cast_of_lt] at h
+    . induction d generalizing a with
+      | zero => simp
+      | succ d' _ =>
+        rw [<-nat_to_binary_self] at h
+        . simp [binary_nat_unique] at h
+          rw [bit_to_zmod_equiv]
+          rw [h]
+          simp [hbin]
+        . rw [<-Nat.add_one]
+          linarith
+    . rw [<-@binary_zmod_same_as_nat (n := N) (d := d) (rep := vector_zmod_to_bit out)]
+      . apply ZMod.val_lt
+      . simp [hd]
+    . simp [hbin]
+  . unfold GatesDef.to_binary
+    intro h
+    have hbin : is_vector_binary out := by
+      rw [<-h]
+      rw [vector_bit_to_zmod]
+      simp [vector_binary_of_bit_to_zmod]
+    rw [recover_binary_zmod_bit]
+    rw [binary_nat_zmod_equiv_mod_p]
+    rw [<-ZMod.val_nat_cast]
+    rw [ZMod.val_nat_cast_of_lt]
+    refine ⟨?_, ?_⟩
+    . induction d generalizing a with
+      | zero =>
+        simp [Nat.mod_one]
+        simp [vector_zmod_to_bit, recover_binary_nat]
+      | succ d' _ =>
+        rw [<-nat_to_binary_self]
+        . simp [binary_nat_unique]
+          apply Eq.symm
+          rw [<-bit_to_zmod_equiv]
+          . rw [h]
+          . simp [hbin]
+        . rw [<-Nat.add_one]
+          linarith
+    . simp [hbin]
+    . rw [<-@binary_zmod_same_as_nat (n := N) (d := d) (rep := vector_zmod_to_bit out)]
+      . apply ZMod.val_lt
+      . simp [hd]
+    . simp [hbin]
 
 @[simp]
-lemma to_binary_equivalence : sorry := by sorry -- TODO
-
-@[simp]
-lemma from_binary_equivalence : sorry := by sorry -- TODO
+lemma from_binary_equivalence {d} {a : Vector (ZMod N) d} {out : ZMod N} (hd : 2^d < N)  :
+  GatesDef.from_binary a out ↔ vector_bit_to_zmod (nat_to_bits_le_full_n d out.val) = a := by
+  unfold GatesDef.from_binary
+  rw [<-GatesDef.to_binary]
+  apply to_binary_equivalence (hd := hd)
 
 end GatesEquivalence

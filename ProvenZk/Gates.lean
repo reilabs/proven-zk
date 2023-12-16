@@ -117,3 +117,40 @@ def GatesGnark_9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
     cmp := GatesDef.cmp_9
     le := GatesDef.le_9
 }
+
+lemma recover_nat_unique (N : Nat) [Fact (Nat.Prime N)] (i1 i2 : Vector Bit (binary_length N)) :
+  i1 = i2 ↔ recover_binary_nat i1 = recover_binary_nat i2 := by
+  apply Iff.intro
+  . apply congr_arg
+  . simp [binary_nat_unique]
+
+lemma recover_nat_different (N : Nat) [Fact (Nat.Prime N)] (i1 i2 : Vector Bit (binary_length N)) :
+  i1 ≠ i2 ↔ recover_binary_nat i1 ≠ recover_binary_nat i2 := by
+  simp [recover_nat_unique]
+
+-- Given a Vector of size `binary_length N`, there are at least two numbers with length `binary_length N`
+-- whose `mod N` returns the same value.
+lemma recover_mod_not_unique (N : Nat) [Fact (Nat.Prime N)] (i1 i2 : Vector Bit (binary_length N)) :
+  (recover_binary_nat i2) % N = (recover_binary_nat i1) % N →
+  ((recover_binary_nat i2) + N) % N = (recover_binary_nat i1) % N:= by
+  intros
+  simp [Nat.mod_eq_sub_mod]
+  tauto
+
+lemma recover_unique (N : Nat) [Fact (Nat.Prime N)] (i1 : Vector Bit (binary_length N)) :
+  ∃i2 : Vector Bit (binary_length N),
+  (recover_binary_nat i2) = (recover_binary_nat i1) →
+  i2 = i1 := by
+  apply Exists.intro
+  rotate_left
+  . assumption
+  . tauto
+
+/-
+Given three numbers
+`i1` `i2` and `i3 = i2 + N`
+→
+le i1 i2 = le i1 i3
+although
+i1 < i2 ≠ i1 < i3
+-/
