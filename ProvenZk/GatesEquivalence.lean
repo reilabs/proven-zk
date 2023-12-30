@@ -341,6 +341,50 @@ lemma is_zero_equivalence' {a out: ZMod N} :
       . tauto
       . tauto
 
+lemma one_plus_one : x+1+1 = x+2 := by simp_arith
+
+lemma nat_succ_div_two : n.succ.succ / 2 = Nat.succ (n/2) := by
+  simp_arith
+
+lemma mul_lt_div {x y a : Nat} : x < a * y ↔ x/a < y := by
+  sorry
+
+lemma binary_lt_two_pow_length {n : Nat} : 2^(binary_length n) > n := by
+  induction n with
+  | zero => simp
+  | succ n' ih =>
+    induction n' with
+    | zero => simp
+    | succ n'' ih' =>
+      simp [binary_length]
+      simp [nat_to_bits_le_full]
+      rw [<-binary_length]
+      simp [pow_succ]
+      simp at *
+      have hc : 0 < 2 := by
+        simp_arith
+
+      rw [mul_lt_div]
+      rw [nat_succ_div_two]
+
+      -- rw [Nat.succ_eq_add_one]
+      -- rw [one_plus_one]
+      -- conv => lhs; rw [<-mul_one (a := n''+2)]
+      -- conv => rhs; rw [mul_comm]
+      -- rw [<-div_lt_div_iff']
+
+      --rw [<-@div_lt_iff' (a := a) (b := b) (c := c) (hc := by subst_vars; simp [hc]; sorry)]
+      sorry
+
+lemma testNat : x.succ <= 2^x → (x/2).succ <= 2^(x/2) := by
+  intro h
+  induction x with
+  | zero =>
+    simp_arith
+  | succ n ih =>
+
+    sorry
+
 @[simp]
 lemma le_equivalence {a b : ZMod N} :
   GatesDef.le_9 a b ↔ a.val <= b.val := by
@@ -349,18 +393,19 @@ lemma le_equivalence {a b : ZMod N} :
   . intro h
     tauto
   . intro h
+    have : 2^(binary_length N) > N := by
+      apply binary_lt_two_pow_length
+    simp only [nat_to_binary_self]
+    simp only [<-ZMod.val_nat_cast]
     refine ⟨?_, ?_, ?_⟩
-    . rw [nat_to_binary_self]
-      -- 2^(binary_length N)
-      -- iff 2^(binary_length N) > N
-      have : 2^(binary_length N) > N := by
-        sorry
-      rw [<-ZMod.val_nat_cast]
-      rw [ZMod.val_nat_cast_of_lt]
-      .
-        sorry
-    . rw [nat_to_binary_self]
-      sorry
+    . rw [ZMod.val_nat_cast_of_lt]
+      have : a.val < N := by
+        simp [ZMod.val_lt]
+      linarith
+    . rw [ZMod.val_nat_cast_of_lt]
+      have : b.val < N := by
+        simp [ZMod.val_lt]
+      linarith
     . tauto
 
 -- Should `hd : 2^d < N` be a hypothesis?
