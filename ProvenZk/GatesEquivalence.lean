@@ -306,10 +306,95 @@ lemma lookup_equivalence {b0 b1 i0 i1 i2 i3 out : ZMod N} :
       simp [add_assoc]
     )
 
+--#eval (3:ZMod 9) = (12:ZMod 9)
+
 @[simp]
 lemma cmp_equivalence {a b out : ZMod N} :
   GatesDef.cmp_9 a b out ↔ if a = b then out = 0 else (if a.val < b.val then out = -1 else out = 1) := by
-  sorry -- TODO
+  unfold GatesDef.cmp_9
+  apply Iff.intro
+  . intro h
+    casesm* (_ ∧ _)
+    split
+    . casesm* (_ ∨ _)
+      . tauto
+      . casesm* (_ ∧ _)
+        rename_i heq hlt _
+        have : a.val = b.val := by
+          apply congrArg (h := heq)
+        apply False.elim (by
+          linarith
+        )
+      . casesm* (_ ∧ _)
+        rename_i heq hlt _
+        have : a.val = b.val := by
+          apply congrArg (h := heq)
+        apply False.elim (by
+          linarith
+        )
+    . split
+      . casesm* (_ ∨ _)
+        . casesm* (_ ∧ _)
+          rename_i hlt heq _
+          have : a.val = b.val := by
+            apply congrArg (h := heq)
+          apply False.elim (by
+            linarith
+          )
+        . tauto
+        . casesm* (_ ∧ _)
+          apply False.elim (by
+            linarith
+          )
+      . casesm* (_ ∨ _)
+        . apply False.elim (by
+            tauto
+          )
+        . apply False.elim (by
+            tauto
+          )
+        . tauto
+  . intro h
+    have : 2^(binary_length N) > N := by
+      apply binary_lt_two_pow_length
+    simp only [nat_to_binary_self]
+    simp only [<-ZMod.val_nat_cast]
+    refine ⟨?_, ?_, ?_⟩
+    . rw [ZMod.val_nat_cast_of_lt]
+      have : a.val < N := by
+        simp [ZMod.val_lt]
+      linarith
+    . rw [ZMod.val_nat_cast_of_lt]
+      have : b.val < N := by
+        simp [ZMod.val_lt]
+      linarith
+    . if a = b then
+        subst_vars
+        simp at h
+        simp
+        tauto
+      else
+        if ZMod.val a < ZMod.val b then
+          rename_i hne hle
+          simp [hle, hne] at h
+          simp [*]
+        else
+          rename_i hne hnle
+          simp [hne, hnle] at h
+          simp [*]
+          simp at hnle
+          if hval : ZMod.val a = ZMod.val b then
+            have : a = b := by
+              rw [<-ZMod.nat_cast_zmod_val (a := a)]
+              rw [<-ZMod.nat_cast_zmod_val (a := b)]
+              rw [hval]
+            apply False.elim (by
+              contradiction
+            )
+          else
+            apply lt_of_le_of_ne
+            . tauto
+            . tauto
 
 @[simp]
 lemma is_zero_equivalence {a out: ZMod N} :
