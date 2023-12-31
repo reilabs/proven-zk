@@ -77,7 +77,7 @@ def nat_to_bits_le_full : Nat → List Bit
       apply Nat.div_le_self
     bit_mod_two (n+2) :: nat_to_bits_le_full ((n+2) / 2)
 
-def binary_length (n : Nat) : Nat := List.length (nat_to_bits_le_full n)
+def binary_length (n : Nat) : Nat := (Nat.log 2 n).succ
 
 def nat_to_bit (x : Nat) : Bit := match x with
   | 0 => Bit.zero

@@ -86,6 +86,29 @@ def nat_to_binary_self {d : Nat} :
         contradiction
       )
 
+lemma one_plus_one : x+1+1 = x+2 := by simp_arith
+
+lemma nat_succ_div_two : n.succ.succ / 2 = Nat.succ (n/2) := by
+  simp_arith
+
+lemma log2_mul {n} : 2 * 2 ^ Nat.log 2 n > n := by
+  rw [<-pow_succ]
+  rw [add_comm]
+  rw [<-Nat.succ_eq_one_add]
+  simp
+  apply Nat.lt_pow_succ_log_self
+  simp
+
+lemma binary_lt_two_pow_length {n : Nat} : 2^(binary_length n) > n := by
+  induction n with
+  | zero => simp
+  | succ n' _ =>
+    conv => rhs; rw [Nat.succ_eq_one_add]
+    rw [binary_length]
+    conv => lhs; arg 2; arg 1; rw [Nat.succ_eq_one_add]
+    rw [Nat.succ_eq_one_add, add_comm, pow_succ]
+    apply log2_mul
+
 @[simp]
 lemma is_bool_equivalence {a : ZMod N} :
   GatesDef.is_bool a ↔ a = 0 ∨ a = 1 := by
@@ -340,50 +363,6 @@ lemma is_zero_equivalence' {a out: ZMod N} :
       rw [inv_self_eq_one, sub_self]
       . tauto
       . tauto
-
-lemma one_plus_one : x+1+1 = x+2 := by simp_arith
-
-lemma nat_succ_div_two : n.succ.succ / 2 = Nat.succ (n/2) := by
-  simp_arith
-
-lemma mul_lt_div {x y a : Nat} : x < a * y ↔ x/a < y := by
-  sorry
-
-lemma binary_lt_two_pow_length {n : Nat} : 2^(binary_length n) > n := by
-  induction n with
-  | zero => simp
-  | succ n' ih =>
-    induction n' with
-    | zero => simp
-    | succ n'' ih' =>
-      simp [binary_length]
-      simp [nat_to_bits_le_full]
-      rw [<-binary_length]
-      simp [pow_succ]
-      simp at *
-      have hc : 0 < 2 := by
-        simp_arith
-
-      rw [mul_lt_div]
-      rw [nat_succ_div_two]
-
-      -- rw [Nat.succ_eq_add_one]
-      -- rw [one_plus_one]
-      -- conv => lhs; rw [<-mul_one (a := n''+2)]
-      -- conv => rhs; rw [mul_comm]
-      -- rw [<-div_lt_div_iff']
-
-      --rw [<-@div_lt_iff' (a := a) (b := b) (c := c) (hc := by subst_vars; simp [hc]; sorry)]
-      sorry
-
-lemma testNat : x.succ <= 2^x → (x/2).succ <= 2^(x/2) := by
-  intro h
-  induction x with
-  | zero =>
-    simp_arith
-  | succ n ih =>
-
-    sorry
 
 @[simp]
 lemma le_equivalence {a b : ZMod N} :
