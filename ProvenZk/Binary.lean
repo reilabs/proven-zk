@@ -648,3 +648,22 @@ theorem SubVector_lift_lower : SubVector.lower (SubVector.lift v) = v := by
   unfold SubVector.lower
   apply Subtype.eq
   simp [GetElem.getElem]
+
+lemma recover_binary_nat_snoc {n : Nat} {v : Vector Bit n} {b : Bit}:
+  recover_binary_nat (v.snoc b) = recover_binary_nat v + 2^n * b.toNat := by
+  induction n with
+  | zero =>
+    cases v using Vector.casesOn
+    simp [recover_binary_nat]
+  | succ n ih =>
+    cases v using Vector.casesOn with | cons hd tl =>
+    unfold recover_binary_nat
+    simp [ih]
+    rw [Nat.add_assoc,
+        Nat.add_left_cancel_iff,
+        Nat.mul_add,
+        Nat.add_left_cancel_iff,
+        Nat.mul_left_comm,
+        ← Nat.mul_assoc,
+        Nat.pow_succ
+    ]
