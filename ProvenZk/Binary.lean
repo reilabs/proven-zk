@@ -1,9 +1,15 @@
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Bitvec.Defs
+import Mathlib.Data.Vector.Mem
 
 import ProvenZk.Ext.List
 import ProvenZk.Ext.Vector
 import ProvenZk.Subvector
+
+open BigOperators
+
+@[reducible]
+def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
 
 inductive Bit : Type where
   | zero : Bit
@@ -19,11 +25,11 @@ def toZMod {n} : Bit -> ZMod n := fun b => match b with
   | Bit.zero => 0
   | Bit.one => 1
 
-instance : Coe Bit Nat where
-  coe := toNat
+-- instance : Coe Bit Nat where
+--   coe := toNat
 
-instance {n} : Coe Bit (ZMod n) where
-  coe := toZMod
+-- instance {n} : Coe Bit (ZMod n) where
+--   coe := toZMod
 
 instance : OfNat Bit 0 where
   ofNat := zero
@@ -33,6 +39,15 @@ instance : OfNat Bit 1 where
 
 instance : Inhabited Bit where
   default := zero
+
+instance [semiring : Semiring α] : Coe Bit α where
+  coe b := match b with
+  | Bit.zero => semiring.zero
+  | Bit.one => semiring.one
+
+@[simp]
+lemma is_bit_toZMod {N} {b:Bit} : is_bit (toZMod b : ZMod N) := by
+  cases b <;> simp [is_bit, toZMod]
 
 end Bit
 
@@ -64,9 +79,6 @@ def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
   | 1 => Bit.one
   | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
 
-@[reducible]
-def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
-
 @[simp]
 theorem is_bit_zero : is_bit (0 : ZMod n) := by tauto
 
@@ -81,36 +93,35 @@ def embedBit {n : Nat} : Bit → {x : (ZMod n) // is_bit x}
 | Bit.zero => bZero
 | Bit.one => bOne
 
-def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
-  (List.foldr (fun a r => is_bit a ∧ r) True (Vector.toList x))
+def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop := ∀ a ∈ x, is_bit a
+
+def recoverBinary [Semiring α] {n} (x : Vector Bit n): α :=
+  ∑i, 2^i.val * ↑(x.get i)
+
+-- @[simp]
+-- theorem is_vector_binary_def : is_vector_binary v ↔ ∀ a ∈ v.toList, is_bit a := by
+--   simp [is_vector_binary, Vector.instMembershipVector]
 
 @[simp]
 lemma is_vector_binary_reverse {depth} (ix : Vector (ZMod n) depth):
   is_vector_binary ix.reverse ↔ is_vector_binary ix := by
-  simp only [is_vector_binary, Vector.toList_reverse]
-  rw [List.foldr_reverse_assoc]
-  { simp }
-  { intros; simp; tauto }
+  simp [is_vector_binary ,Vector.toList_reverse]
 
 theorem is_vector_binary_cons {a : ZMod n} {vec : Vector (ZMod n) d}:
   is_vector_binary (a ::ᵥ vec) ↔ is_bit a ∧ is_vector_binary vec := by
-  unfold is_vector_binary
-  conv => lhs; unfold List.foldr; simp
+  simp [is_vector_binary]
 
-theorem is_vector_binary_dropLast {d n : Nat} {gate_0 : Vector (ZMod n) d} :
-  is_vector_binary gate_0 → is_vector_binary (Vector.dropLast gate_0) := by
-  simp [is_vector_binary, Vector.toList_dropLast]
-  intro h
-  induction gate_0 using Vector.inductionOn with
-  | h_nil => simp [List.dropLast]
-  | h_cons ih =>
-    rename_i x xs
-    cases xs using Vector.casesOn
-    simp
-    rw [Vector.toList_cons, Vector.toList_cons, List.dropLast_cons]
-    simp [h]
-    cases h
-    tauto
+lemma is_vector_binary_snoc {vs : Vector (ZMod (Nat.succ p)) n} {v}: is_vector_binary (vs.snoc v) ↔ is_vector_binary vs ∧ is_bit v := by
+  simp [is_vector_binary]
+  apply Iff.intro
+  . intro h
+    exact ⟨(fun a ha => h a (Or.inl ha)), h v (Or.inr rfl)⟩
+  . intro h
+    rcases h with ⟨hl, hr⟩
+    intro a ha
+    cases ha
+    . apply hl; assumption
+    . subst_vars; assumption
 
 lemma dropLast_symm {n} {xs : Vector Bit d} :
   Vector.map (fun i => @Bit.toZMod n i) (Vector.dropLast xs) = (Vector.map (fun i => @Bit.toZMod n i) xs).dropLast := by
@@ -417,28 +428,7 @@ theorem zmod_to_bit_coe {n : Nat} [Fact (n > 1)] {w : Vector Bit d} :
     }
 
 theorem vector_binary_of_bit_to_zmod {n : Nat} [Fact (n > 1)] {w : Vector Bit d }:
-  is_vector_binary (w.map (Bit.toZMod (n := n))) := by
-  induction w using Vector.inductionOn with
-  | h_nil => trivial
-  | h_cons ih =>
-    simp [is_vector_binary_cons]
-    apply And.intro
-    . unfold Bit.toZMod
-      split <;> {
-        have : n > 1 := (inferInstance : Fact (n > 1)).elim
-        induction n with
-        | zero =>
-          apply absurd this
-          simp
-        | succ n =>
-          induction n with
-          | zero =>
-            apply absurd this
-            simp
-          | succ =>
-            simp [is_bit]
-      }
-    . apply ih
+  is_vector_binary (w.map (Bit.toZMod (n := n))) := by simp [is_vector_binary]
 
 theorem recover_binary_of_to_bits {n : Nat} [Fact (n > 1)] {w : Vector Bit d} {v : ZMod n}:
   nat_to_bits_le d v.val = some w →
@@ -606,10 +596,9 @@ lemma bitCases_bZero {n:Nat}: bitCases (@bZero (n + 2)) = Bit.zero := by rfl
 @[simp]
 lemma bitCases_bOne {n:Nat}: bitCases (@bOne (n+2)) = Bit.one := by rfl
 
-theorem is_vector_binary_iff_allIxes_is_bit {n : Nat} {v : Vector (ZMod n) d}: Vector.allIxes is_bit v ↔ is_vector_binary v := by
-  induction v using Vector.inductionOn with
-  | h_nil => simp [is_vector_binary]
-  | h_cons ih => conv => lhs; simp [ih]
+-- theorem is_vector_binary_iff_allIxes_is_bit {n : Nat} {v : Vector (ZMod n) d}: Vector.allIxes is_bit v ↔ is_vector_binary v := by
+--   rw [Vector.allIxes_iff_allElems]
+--   rfl
 
 theorem fin_to_bits_le_recover_binary_nat {v : Vector Bit d}:
   fin_to_bits_le ⟨recover_binary_nat v, binary_nat_lt _⟩ = v := by

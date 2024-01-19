@@ -1,4 +1,5 @@
 import Mathlib.Data.Vector.Snoc
+import Mathlib.Data.Vector.Mem
 import Mathlib.Data.Matrix.Basic
 import Mathlib.Data.List.Defs
 
@@ -251,44 +252,65 @@ theorem ofFn_snoc' { fn : Fin (Nat.succ n) → α }:
     congr
     simp [Nat.mod_eq_of_lt]
 
-def allIxes (f : α → Prop) : Vector α n → Prop := fun v => ∀(i : Fin n), f v[i]
+instance : Membership α (Vector α n) := ⟨fun x xs => x ∈ xs.toList⟩
 
 @[simp]
-theorem allIxes_cons : allIxes f (v ::ᵥ vs) ↔ f v ∧ allIxes f vs := by
-  simp [allIxes, GetElem.getElem]
-  apply Iff.intro
-  . intro h
-    exact ⟨h 0, fun i => h i.succ⟩
-  . intro h i
-    cases i using Fin.cases
-    . simp [h.1]
-    . simp [h.2]
+theorem mem_def {xs : Vector α n} {x} : x ∈ xs ↔ x ∈ xs.toList := by rfl
+
+def allElems (f : α → Prop) : Vector α n → Prop := fun v => ∀(a : α), a ∈ v → f a
 
 @[simp]
-theorem allIxes_nil : allIxes f Vector.nil := by
-  simp [allIxes]
+theorem allElems_cons : Vector.allElems prop (v ::ᵥ vs) ↔ prop v ∧ allElems prop vs := by
+  simp [allElems]
 
-theorem getElem_allIxes {v : { v: Vector α n // allIxes prop v  }} {i : Nat} { i_small : i < n}:
-  v.val[i]'i_small = ↑(Subtype.mk (v.val.get ⟨i, i_small⟩) (v.prop ⟨i, i_small⟩)) := by rfl
+@[simp]
+theorem allElems_nil : Vector.allElems prop Vector.nil := by simp [allElems]
 
-theorem getElem_allIxes₂ {v : { v: Vector (Vector α m) n // allIxes (allIxes prop) v  }} {i j: Nat} { i_small : i < n} { j_small : j < m}:
-  (v.val[i]'i_small)[j]'j_small = ↑(Subtype.mk ((v.val.get ⟨i, i_small⟩).get ⟨j, j_small⟩) (v.prop ⟨i, i_small⟩ ⟨j, j_small⟩)) := by rfl
+-- def allIxes (f : α → Prop) : Vector α n → Prop := fun v => ∀(i : Fin n), f v[i]
 
-theorem allIxes_indexed {v : {v : Vector α n // allIxes prop v}} {i : Nat} {i_small : i < n}:
-  prop (v.val[i]'i_small) := v.prop ⟨i, i_small⟩
+-- @[simp]
+-- theorem allIxes_cons : allIxes f (v ::ᵥ vs) ↔ f v ∧ allIxes f vs := by
+--   simp [allIxes, GetElem.getElem]
+--   apply Iff.intro
+--   . intro h
+--     exact ⟨h 0, fun i => h i.succ⟩
+--   . intro h i
+--     cases i using Fin.cases
+--     . simp [h.1]
+--     . simp [h.2]
 
-theorem allIxes_indexed₂ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes prop) v}}
+-- @[simp]
+-- theorem allIxes_nil : allIxes f Vector.nil := by
+--   simp [allIxes]
+
+theorem getElem_allElems {v : { v: Vector α n // allElems prop v  }} {i : Nat} { i_small : i < n}:
+  v.val[i]'i_small = ↑(Subtype.mk (p := prop) (v.val.get ⟨i, i_small⟩) (by apply v.prop; simp)) := by rfl
+
+theorem getElem_allElems₂ {v : { v: Vector (Vector α m) n // allElems (allElems prop) v  }} {i j: Nat} { i_small : i < n} { j_small : j < m}:
+  (v.val[i]'i_small)[j]'j_small = ↑(Subtype.mk (p := prop) ((v.val.get ⟨i, i_small⟩).get ⟨j, j_small⟩) (by apply v.prop; rotate_right; exact v.val.get ⟨i, i_small⟩; all_goals simp)) := by rfl
+
+theorem allElems_indexed {v : {v : Vector α n // allElems prop v}} {i : Nat} {i_small : i < n}:
+  prop (v.val[i]'i_small) := by
+  apply v.prop
+  simp [getElem]
+
+theorem allElems_indexed₂ {v : {v : Vector (Vector (Vector α a) b) c // allElems (allElems prop) v}}
   {i : Nat} {i_small : i < c}
   {j : Nat} {j_small : j < b}:
-  prop ((v.val[i]'i_small)[j]'j_small) :=
-  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩
+  prop ((v.val[i]'i_small)[j]'j_small) := by
+  apply v.prop (v.val[i]'i_small) <;> simp [getElem]
 
-theorem allIxes_indexed₃ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes (allIxes prop)) v}}
+theorem allElems_indexed₃ {v : {v : Vector (Vector (Vector α a) b) c // allElems (allElems (allElems prop)) v}}
   {i : Nat} {i_small : i < c}
   {j : Nat} {j_small : j < b}
   {k : Nat} {k_small : k < a}:
-  prop (((v.val[i]'i_small)[j]'j_small)[k]'k_small) :=
-  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩ ⟨k, k_small⟩
+  prop (((v.val[i]'i_small)[j]'j_small)[k]'k_small) := by
+  apply v.prop
+  rotate_right
+  . exact (v.val[i]'i_small)[j]'j_small
+  rotate_right
+  . exact (v.val[i]'i_small)
+  all_goals simp [getElem]
 
 @[simp]
 theorem map_ofFn {f : α → β} (g : Fin n → α) :
@@ -333,59 +355,71 @@ theorem append_inj {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}:
     subst_vars
     apply And.intro <;> rfl
 
-theorem allIxes_toList : Vector.allIxes prop v ↔ ∀ i, prop (v.toList.get i) := by
-  unfold Vector.allIxes
-  apply Iff.intro
-  . intro h i
-    rcases i with ⟨i, p⟩
-    simp at p
-    simp [GetElem.getElem, Vector.get] at h
-    have := h ⟨i, p⟩
-    conv at this => arg 1; whnf
-    exact this
-  . intro h i
-    simp [GetElem.getElem, Vector.get]
-    rcases i with ⟨i, p⟩
-    have := h ⟨i, by simpa⟩
-    conv at this => arg 1; whnf
-    exact this
+-- theorem allIxes_toList : Vector.allIxes prop v ↔ ∀ i, prop (v.toList.get i) := by
+--   unfold Vector.allIxes
+--   apply Iff.intro
+--   . intro h i
+--     rcases i with ⟨i, p⟩
+--     simp at p
+--     simp [GetElem.getElem, Vector.get] at h
+--     have := h ⟨i, p⟩
+--     conv at this => arg 1; whnf
+--     exact this
+--   . intro h i
+--     simp [GetElem.getElem, Vector.get]
+--     rcases i with ⟨i, p⟩
+--     have := h ⟨i, by simpa⟩
+--     conv at this => arg 1; whnf
+--     exact this
 
-theorem allIxes_append {v₁ : Vector α n₁} {v₂ : Vector α n₂} : Vector.allIxes prop (v₁ ++ v₂) ↔ Vector.allIxes prop v₁ ∧ Vector.allIxes prop v₂ := by
-  simp [allIxes_toList]
-  apply Iff.intro
-  . intro h
-    apply And.intro
-    . intro i
-      rcases i with ⟨i, hp⟩
-      simp at hp
-      rw [←List.get_append]
-      exact h ⟨i, (by simp; apply Nat.lt_add_right; assumption)⟩
-    . intro i
-      rcases i with ⟨i, hp⟩
-      simp at hp
-      have := h ⟨n₁ + i, (by simpa)⟩
-      rw [List.get_append_right] at this
-      simp at this
-      exact this
-      . simp
-      . simpa
-  . intro ⟨l, r⟩
-    intro ⟨i, hi⟩
-    simp at hi
-    cases lt_or_ge i n₁ with
-    | inl hp =>
-      rw [List.get_append _ (by simpa)]
-      exact l ⟨i, (by simpa)⟩
-    | inr hp =>
-      rw [List.get_append_right]
-      have := r ⟨i - n₁, (by simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption )⟩
-      simp at this
-      simpa
-      . simp; exact LE.le.ge hp
-      . simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption
+-- theorem allIxes_append {v₁ : Vector α n₁} {v₂ : Vector α n₂} : Vector.allIxes prop (v₁ ++ v₂) ↔ Vector.allIxes prop v₁ ∧ Vector.allIxes prop v₂ := by
+--   simp [allIxes_toList]
+--   apply Iff.intro
+--   . intro h
+--     apply And.intro
+--     . intro i
+--       rcases i with ⟨i, hp⟩
+--       simp at hp
+--       rw [←List.get_append]
+--       exact h ⟨i, (by simp; apply Nat.lt_add_right; assumption)⟩
+--     . intro i
+--       rcases i with ⟨i, hp⟩
+--       simp at hp
+--       have := h ⟨n₁ + i, (by simpa)⟩
+--       rw [List.get_append_right] at this
+--       simp at this
+--       exact this
+--       . simp
+--       . simpa
+--   . intro ⟨l, r⟩
+--     intro ⟨i, hi⟩
+--     simp at hi
+--     cases lt_or_ge i n₁ with
+--     | inl hp =>
+--       rw [List.get_append _ (by simpa)]
+--       exact l ⟨i, (by simpa)⟩
+--     | inr hp =>
+--       rw [List.get_append_right]
+--       have := r ⟨i - n₁, (by simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption )⟩
+--       simp at this
+--       simpa
+--       . simp; exact LE.le.ge hp
+--       . simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption
 
-theorem SubVector_append {v₁ : Vector α d₁} {prop₁ : Vector.allIxes prop v₁ } {v₂ : Vector α d₂} {prop₂ : Vector.allIxes prop v₂}:
-  (Subtype.mk v₁ prop₁).val ++ (Subtype.mk v₂ prop₂).val =
-  (Subtype.mk (v₁ ++ v₂) (allIxes_append.mpr ⟨prop₁, prop₂⟩)).val := by eq_refl
+-- theorem SubVector_append {v₁ : Vector α d₁} {prop₁ : Vector.allIxes prop v₁ } {v₂ : Vector α d₂} {prop₂ : Vector.allIxes prop v₂}:
+--   (Subtype.mk v₁ prop₁).val ++ (Subtype.mk v₂ prop₂).val =
+--   (Subtype.mk (v₁ ++ v₂) (allIxes_append.mpr ⟨prop₁, prop₂⟩)).val := by eq_refl
+
+
+-- theorem allIxes_iff_allElems : allIxes prop v ↔ ∀ a ∈ v, prop a := by
+--   apply Iff.intro
+--   . intro hp a ain
+--     have := (Vector.mem_iff_get a v).mp ain
+--     rcases this with ⟨i, h⟩
+--     cases h
+--     apply hp
+--   . intro hp i
+--     apply hp
+--     apply Vector.get_mem
 
 end Vector
