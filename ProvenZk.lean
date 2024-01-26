@@ -8,5 +8,5 @@ import ProvenZk.Ext.Range
 import ProvenZk.Ext.Matrix
 import ProvenZk.Ext.List
 import ProvenZk.Ext.Fin
-import ProvenZk.Subvector
-import ProvenZk.Misc
+import ProvenZk.Lemmas
+import ProvenZk.UniqueAssignment
