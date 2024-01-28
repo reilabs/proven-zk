@@ -7,6 +7,15 @@ theorem getElem?_eq_some_getElem_of_valid_index [GetElem cont idx elem domain] [
   . rfl
   . contradiction
 
+theorem getElem!_eq_getElem_of_valid_index [GetElem cont idx elem domain] [Decidable (domain container index)] [Inhabited elem] (h : domain container index):
+  container[index]! = container[index] := by
+  simp [getElem!, h]
+
+theorem getElem_of_getElem! [GetElem cont idx elem domain] [Decidable (domain container index)] [Inhabited elem] (ix_ok : domain container index) (h : container[index]! = element):
+  container[index] = element := by
+  simp [getElem!, ix_ok] at h
+  assumption
+
 theorem getElem?_none_of_invalid_index [GetElem cont idx elem domain] [Decidable (domain container index)] (h : ¬ domain container index):
   container[index]? = none := by
   unfold getElem?

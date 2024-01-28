@@ -34,6 +34,15 @@ lemma Bool.toZMod_one {N} : Bool.toZMod true = (1  : ZMod N) := by
 lemma Bool.toZMod_is_bit {N} : is_bit (toZMod (N:=N) b) := by
   cases b <;> simp [is_bit, toZMod, toNat]
 
+
+@[simp]
+theorem Bool.toZMod_eq_one_iff_eq_true {n:ℕ} [Fact (n > 1)] : (Bool.toZMod a : ZMod n) = 1 ↔ a = true := by
+  cases a <;> simp
+
+@[simp]
+theorem Bool.toZMod_eq_one_iff_eq_false {n:ℕ} [Fact (n > 1)] : (Bool.toZMod a : ZMod n) = 0 ↔ a = false := by
+  cases a <;> simp
+
 @[simp]
 lemma Bool.ofZMod_toZMod_eq_self {b} [Fact (N > 1)]: Bool.ofZMod (Bool.toZMod (N:=N) b) = b := by
   cases b <;> simp [toZMod, ofZMod, ofNat, toNat]

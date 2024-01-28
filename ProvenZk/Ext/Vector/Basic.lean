@@ -252,61 +252,6 @@ instance : Membership α (Vector α n) := ⟨fun x xs => x ∈ xs.toList⟩
 @[simp]
 theorem mem_def {xs : Vector α n} {x} : x ∈ xs ↔ x ∈ xs.toList := by rfl
 
--- def allElems (f : α → Prop) : Vector α n → Prop := fun v => ∀(a : α), a ∈ v → f a
-
--- @[simp]
--- theorem allElems_cons : Vector.allElems prop (v ::ᵥ vs) ↔ prop v ∧ allElems prop vs := by
---   simp [allElems]
-
--- @[simp]
--- theorem allElems_nil : Vector.allElems prop Vector.nil := by simp [allElems]
-
--- def allIxes (f : α → Prop) : Vector α n → Prop := fun v => ∀(i : Fin n), f v[i]
-
--- @[simp]
--- theorem allIxes_cons : allIxes f (v ::ᵥ vs) ↔ f v ∧ allIxes f vs := by
---   simp [allIxes, GetElem.getElem]
---   apply Iff.intro
---   . intro h
---     exact ⟨h 0, fun i => h i.succ⟩
---   . intro h i
---     cases i using Fin.cases
---     . simp [h.1]
---     . simp [h.2]
-
--- @[simp]
--- theorem allIxes_nil : allIxes f Vector.nil := by
---   simp [allIxes]
-
--- theorem getElem_allElems {v : { v: Vector α n // allElems prop v  }} {i : Nat} { i_small : i < n}:
---   v.val[i]'i_small = ↑(Subtype.mk (p := prop) (v.val.get ⟨i, i_small⟩) (by apply v.prop; simp)) := by rfl
-
--- theorem getElem_allElems₂ {v : { v: Vector (Vector α m) n // allElems (allElems prop) v  }} {i j: Nat} { i_small : i < n} { j_small : j < m}:
---   (v.val[i]'i_small)[j]'j_small = ↑(Subtype.mk (p := prop) ((v.val.get ⟨i, i_small⟩).get ⟨j, j_small⟩) (by apply v.prop; rotate_right; exact v.val.get ⟨i, i_small⟩; all_goals simp)) := by rfl
-
--- theorem allElems_indexed {v : {v : Vector α n // allElems prop v}} {i : Nat} {i_small : i < n}:
---   prop (v.val[i]'i_small) := by
---   apply v.prop
---   simp [getElem]
-
--- theorem allElems_indexed₂ {v : {v : Vector (Vector (Vector α a) b) c // allElems (allElems prop) v}}
---   {i : Nat} {i_small : i < c}
---   {j : Nat} {j_small : j < b}:
---   prop ((v.val[i]'i_small)[j]'j_small) := by
---   apply v.prop (v.val[i]'i_small) <;> simp [getElem]
-
--- theorem allElems_indexed₃ {v : {v : Vector (Vector (Vector α a) b) c // allElems (allElems (allElems prop)) v}}
---   {i : Nat} {i_small : i < c}
---   {j : Nat} {j_small : j < b}
---   {k : Nat} {k_small : k < a}:
---   prop (((v.val[i]'i_small)[j]'j_small)[k]'k_small) := by
---   apply v.prop
---   rotate_right
---   . exact (v.val[i]'i_small)[j]'j_small
---   rotate_right
---   . exact (v.val[i]'i_small)
---   all_goals simp [getElem]
-
 @[simp]
 theorem map_ofFn {f : α → β} (g : Fin n → α) :
   Vector.map f (Vector.ofFn g) = Vector.ofFn (fun x => f (g x)) := by
@@ -367,47 +312,6 @@ theorem append_inj_iff {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}
   . intro ⟨_, _⟩
     simp [*]
 
--- theorem allIxes_toList : Vector.allIxes prop v ↔ ∀ i, prop (v.toList.get i) := by
---   unfold Vector.allIxes
---   apply Iff.intro
---   . intro h i
---     rcases i with ⟨i, p⟩
---     simp at p
---     simp [GetElem.getElem, Vector.get] at h
---     have := h ⟨i, p⟩
---     conv at this => arg 1; whnf
---     exact this
---   . intro h i
---     simp [GetElem.getElem, Vector.get]
---     rcases i with ⟨i, p⟩
---     have := h ⟨i, by simpa⟩
---     conv at this => arg 1; whnf
---     exact this
-
--- theorem allElems_append {v₁ : Vector α n₁} {v₂ : Vector α n₂} : Vector.allElems prop (v₁ ++ v₂) ↔ Vector.allElems prop v₁ ∧ Vector.allElems prop v₂ := by
---   simp [allElems]
---   apply Iff.intro
---   . intro h
---     apply And.intro
---     . exact fun a hp => h a (Or.inl hp)
---     . exact fun a hp => h a (Or.inr hp)
---   . rintro ⟨_,_⟩ _ _ ; tauto
-
--- theorem SubVector_append {v₁ : Vector α d₁} {prop₁ : Vector.allIxes prop v₁ } {v₂ : Vector α d₂} {prop₂ : Vector.allIxes prop v₂}:
---   (Subtype.mk v₁ prop₁).val ++ (Subtype.mk v₂ prop₂).val =
---   (Subtype.mk (v₁ ++ v₂) (allIxes_append.mpr ⟨prop₁, prop₂⟩)).val := by eq_refl
-
-
--- theorem allIxes_iff_allElems : allIxes prop v ↔ ∀ a ∈ v, prop a := by
---   apply Iff.intro
---   . intro hp a ain
---     have := (Vector.mem_iff_get a v).mp ain
---     rcases this with ⟨i, h⟩
---     cases h
---     apply hp
---   . intro hp i
---     apply hp
---     apply Vector.get_mem
 
 @[simp]
 theorem getElem_map {i n : ℕ} {h : i < n} {v : Vector α n} : (Vector.map f v)[i]'h = f (v[i]'h) := by
@@ -448,5 +352,42 @@ theorem permute_inj {n : Nat} {fn : Fin m → Fin n} (perm_surj : Function.Surje
 theorem map_permute {p : Fin m → Fin n} {f : α → β} {v : Vector α n}:
   Vector.map f (permute p v) = permute p (v.map f) := by
   simp [permute]
+
+theorem exists_succ_iff_exists_snoc {α d} {pred : Vector α (Nat.succ d) → Prop}:
+  (∃v, pred v) ↔ ∃vs v, pred (Vector.snoc vs v) := by
+  apply Iff.intro
+  . rintro ⟨v, hp⟩
+    cases v using Vector.revCasesOn
+    apply Exists.intro
+    apply Exists.intro
+    assumption
+  . rintro ⟨vs, v, hp⟩
+    exists vs.snoc v
+
+theorem exists_succ_iff_exists_cons {α d} {pred : Vector α (Nat.succ d) → Prop}:
+  (∃v, pred v) ↔ ∃v vs, pred (v ::ᵥ vs) := by
+  apply Iff.intro
+  . rintro ⟨v, hp⟩
+    cases v using Vector.casesOn
+    apply Exists.intro
+    apply Exists.intro
+    assumption
+  . rintro ⟨v, vs, hp⟩
+    exists (v ::ᵥ vs)
+
+@[simp]
+theorem snoc_eq : Vector.snoc xs x = Vector.snoc ys y ↔ xs = ys ∧ x = y := by
+  apply Iff.intro
+  . intro h
+    have := congrArg Vector.reverse h
+    simp at this
+    injection this with this
+    injection this with h t
+    simp [*]
+    apply Vector.eq
+    have := congrArg List.reverse t
+    simpa [this]
+  . intro ⟨_, _⟩
+    simp [*]
 
 end Vector

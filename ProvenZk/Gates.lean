@@ -6,7 +6,6 @@ open BigOperators
 
 namespace Gates
 variable {N : Nat}
--- variable [Fact (Nat.Prime N)]
 def is_bool (a : ZMod N): Prop := a = 0 ∨ a = 1
 def add (a b : ZMod N): ZMod N := a + b
 def mul_acc (a b c : ZMod N): ZMod N := a + (b * c)

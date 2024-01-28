@@ -9,35 +9,66 @@ variable [Fact (Nat.Prime N)]
 
 instance : Fact (N > 1) := ⟨Nat.Prime.one_lt Fact.out⟩
 
+theorem ZMod.eq_of_veq {a b : ZMod N} (h : a.val = b.val) : a = b := by
+  have : N ≠ 0 := by apply Nat.Prime.ne_zero Fact.out
+  have : ∃n, N = Nat.succ n := by exists N.pred; simp [Nat.succ_pred this]
+  rcases this with ⟨_, ⟨_⟩⟩
+  simp [val] at h
+  exact Fin.eq_of_veq h
+
+
+theorem ZMod.val_fin {n : ℕ} {i : ZMod (Nat.succ n)} : i.val = Fin.val i := by
+  simp [ZMod.val]
+
+@[simp]
+theorem exists_eq_left₂ {pred : α → β → Prop}:
+  (∃a b, (a = c ∧ b = d) ∧ pred a b) ↔ pred c d := by
+  simp [and_assoc]
+
 @[simp]
 theorem is_bool_is_bit (a : ZMod n) [Fact (Nat.Prime n)]: Gates.is_bool a = is_bit a := by rfl
 
 @[simp]
-theorem select_zero {a b r : ZMod N}: Gates.select 0 a b r = (r = b) := by
+theorem Gates.eq_def : Gates.eq a b ↔ a = b := by simp [Gates.eq]
+
+@[simp]
+theorem Gates.sub_def {N} {a b : ZMod N} : Gates.sub a b = a - b := by simp [Gates.sub]
+
+@[simp]
+theorem Gates.is_zero_def {N} {a out : ZMod N} : Gates.is_zero a out ↔ out = Bool.toZMod (a = 0) := by
+  simp [Gates.is_zero]
+  apply Iff.intro
+  . rintro (_ | _) <;> simp [*]
+  . rintro ⟨_⟩
+    simp [Bool.toZMod, Bool.toNat]
+    tauto
+
+@[simp]
+theorem Gates.select_zero {a b r : ZMod N}: Gates.select 0 a b r = (r = b) := by
   simp [Gates.select]
 
 @[simp]
-theorem select_one {a b r : ZMod N}: Gates.select 1 a b r = (r = a) := by
+theorem Gates.select_one {a b r : ZMod N}: Gates.select 1 a b r = (r = a) := by
   simp [Gates.select]
 
 @[simp]
-theorem or_zero { a r : ZMod N}: Gates.or a 0 r = (is_bit a ∧ r = a) := by
+theorem Gates.or_zero { a r : ZMod N}: Gates.or a 0 r = (is_bit a ∧ r = a) := by
   simp [Gates.or]
 
 @[simp]
-theorem zero_or { a r : ZMod N}: Gates.or 0 a r = (is_bit a ∧ r = a) := by
+theorem Gates.zero_or { a r : ZMod N}: Gates.or 0 a r = (is_bit a ∧ r = a) := by
   simp [Gates.or]
 
 @[simp]
-theorem one_or { a r : ZMod N}: Gates.or 1 a r = (is_bit a ∧ r = 1) := by
+theorem Gates.one_or { a r : ZMod N}: Gates.or 1 a r = (is_bit a ∧ r = 1) := by
   simp [Gates.or]
 
 @[simp]
-theorem or_one { a r : ZMod N}: Gates.or a 1 r = (is_bit a ∧ r = 1) := by
+theorem Gates.or_one { a r : ZMod N}: Gates.or a 1 r = (is_bit a ∧ r = 1) := by
   simp [Gates.or]
 
 @[simp]
-theorem is_bit_one_sub {a : ZMod N}: is_bit (Gates.sub 1 a) ↔ is_bit a := by
+theorem Gates.is_bit_one_sub {a : ZMod N}: is_bit (Gates.sub 1 a) ↔ is_bit a := by
   simp [Gates.sub, is_bit, sub_eq_zero]
   tauto
 
@@ -64,7 +95,7 @@ theorem Gates.or_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : Gates.or a.to
   }
 
 @[simp]
-theorem Gates.not_bool {N} [Fact (N>1)] {a : Bool} : Gates.sub (1 : ZMod N) a.toZMod = (!a).toZMod := by
+theorem Gates.not_bool {N} [Fact (N>1)] {a : Bool} : (1 : ZMod N) - a.toZMod = (!a).toZMod := by
   cases a <;> simp [sub]
 
 @[simp]
