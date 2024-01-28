@@ -1,68 +1,13 @@
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Bitvec.Defs
+import Mathlib.Data.Vector.Mem
+import Mathlib.Data.Vector.MapLemmas
+import Mathlib
 
 import ProvenZk.Ext.List
 import ProvenZk.Ext.Vector
-import ProvenZk.Subvector
 
-inductive Bit : Type where
-  | zero : Bit
-  | one : Bit
-  deriving Repr, BEq
-
-namespace Bit
-def toNat : Bit -> Nat := fun b => match b with
-  | Bit.zero => 0
-  | Bit.one => 1
-
-def toZMod {n} : Bit -> ZMod n := fun b => match b with
-  | Bit.zero => 0
-  | Bit.one => 1
-
-instance : Coe Bit Nat where
-  coe := toNat
-
-instance {n} : Coe Bit (ZMod n) where
-  coe := toZMod
-
-instance : OfNat Bit 0 where
-  ofNat := zero
-
-instance : OfNat Bit 1 where
-  ofNat := one
-
-instance : Inhabited Bit where
-  default := zero
-
-end Bit
-
-def bit_mod_two (inp : Nat) : Bit := match h:inp%2 with
- | 0 => Bit.zero
- | 1 => Bit.one
- | x + 2 => False.elim (by
-    have := Nat.mod_lt inp (y := 2)
-    rw [h] at this
-    simp at this
-    contradiction
- )
-
-def nat_to_bits_le (l : Nat): Nat → Option (Vector Bit l) := match l with
-  | 0 => fun i => if i = 0 then some Vector.nil else none
-  | Nat.succ l => fun i => do
-    let x := i / 2
-    let y := bit_mod_two i
-    let xs ← nat_to_bits_le l x
-    some (y ::ᵥ xs)
-
-def nat_to_bit (x : Nat) : Bit := match x with
-  | 0 => Bit.zero
-  | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
-
-def zmod_to_bit {n} (x : ZMod n) : Bit := match ZMod.val x with
-  | 0 => Bit.zero
-  | 1 => Bit.one
-  | Nat.succ (Nat.succ _) => panic "Bit can only be 0 or 1"
+open BigOperators
 
 @[reducible]
 def is_bit (a : ZMod N): Prop := a = 0 ∨ a = 1
@@ -73,578 +18,274 @@ theorem is_bit_zero : is_bit (0 : ZMod n) := by tauto
 @[simp]
 theorem is_bit_one : is_bit (1 : ZMod n) := by tauto
 
-abbrev bOne : {v : ZMod n // is_bit v} := ⟨1, by simp⟩
+def Bool.toZMod {N} (b : Bool) : ZMod N := b.toNat
 
-abbrev bZero : {v : ZMod n // is_bit v} := ⟨0, by simp⟩
+def Bool.ofZMod {N} (b : ZMod N) : Bool := Bool.ofNat b.val
 
-def embedBit {n : Nat} : Bit → {x : (ZMod n) // is_bit x}
-| Bit.zero => bZero
-| Bit.one => bOne
+@[simp]
+lemma Bool.toZMod_zero {N} : Bool.toZMod false = (0  : ZMod N) := by
+  simp [Bool.toZMod, Bool.toNat]
 
-def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop :=
-  (List.foldr (fun a r => is_bit a ∧ r) True (Vector.toList x))
+@[simp]
+lemma Bool.toZMod_one {N} : Bool.toZMod true = (1  : ZMod N) := by
+  simp [Bool.toZMod, Bool.toNat]
+
+@[simp]
+lemma Bool.toZMod_is_bit {N} : is_bit (toZMod (N:=N) b) := by
+  cases b <;> simp [is_bit, toZMod, toNat]
+
+
+@[simp]
+theorem Bool.toZMod_eq_one_iff_eq_true {n:ℕ} [Fact (n > 1)] : (Bool.toZMod a : ZMod n) = 1 ↔ a = true := by
+  cases a <;> simp
+
+@[simp]
+theorem Bool.toZMod_eq_one_iff_eq_false {n:ℕ} [Fact (n > 1)] : (Bool.toZMod a : ZMod n) = 0 ↔ a = false := by
+  cases a <;> simp
+
+@[simp]
+lemma Bool.ofZMod_toZMod_eq_self {b} [Fact (N > 1)]: Bool.ofZMod (Bool.toZMod (N:=N) b) = b := by
+  cases b <;> simp [toZMod, ofZMod, ofNat, toNat]
+
+@[simp]
+lemma Bool.toZMod_ofZMod_eq_self_of_is_bit {N} [Fact (N > 1)] {i : ZMod N} (h : is_bit i):
+  Bool.toZMod (Bool.ofZMod i) = i := by
+  cases h <;> {simp [*, ofZMod, toZMod, ofNat, toNat]}
+
+def is_vector_binary {d n} (x : Vector (ZMod n) d) : Prop := ∀ a ∈ x, is_bit a
 
 @[simp]
 lemma is_vector_binary_reverse {depth} (ix : Vector (ZMod n) depth):
   is_vector_binary ix.reverse ↔ is_vector_binary ix := by
-  simp only [is_vector_binary, Vector.toList_reverse]
-  rw [List.foldr_reverse_assoc]
-  { simp }
-  { intros; simp; tauto }
+  simp [is_vector_binary ,Vector.toList_reverse]
 
 theorem is_vector_binary_cons {a : ZMod n} {vec : Vector (ZMod n) d}:
   is_vector_binary (a ::ᵥ vec) ↔ is_bit a ∧ is_vector_binary vec := by
-  unfold is_vector_binary
-  conv => lhs; unfold List.foldr; simp
+  simp [is_vector_binary]
 
-theorem is_vector_binary_dropLast {d n : Nat} {gate_0 : Vector (ZMod n) d} :
-  is_vector_binary gate_0 → is_vector_binary (Vector.dropLast gate_0) := by
-  simp [is_vector_binary, Vector.toList_dropLast]
-  intro h
-  induction gate_0 using Vector.inductionOn with
-  | h_nil => simp [List.dropLast]
-  | h_cons ih =>
-    rename_i x xs
-    cases xs using Vector.casesOn
-    simp
-    rw [Vector.toList_cons, Vector.toList_cons, List.dropLast_cons]
-    simp [h]
-    cases h
-    tauto
-
-lemma dropLast_symm {n} {xs : Vector Bit d} :
-  Vector.map (fun i => @Bit.toZMod n i) (Vector.dropLast xs) = (Vector.map (fun i => @Bit.toZMod n i) xs).dropLast := by
-  induction xs using Vector.inductionOn with
-  | h_nil =>
-    simp [Vector.dropLast, Vector.map]
-  | h_cons ih₁ =>
-    rename_i x₁ xs
-    induction xs using Vector.inductionOn with
-    | h_nil =>
-      simp [Vector.dropLast, Vector.map]
-    | h_cons _ =>
-      rename_i x₂ xs
-      simp [Vector.vector_list_vector]
-      simp [ih₁]
-
-lemma zmod_to_bit_to_zmod {n : Nat} [Fact (n > 1)] {x : (ZMod n)} (h : is_bit x):
-  Bit.toZMod (zmod_to_bit x) = x := by
-  simp [is_bit] at h
-  cases h with
-  | inl =>
-    subst_vars
-    simp [zmod_to_bit, Bit.toZMod]
-  | inr =>
-    subst_vars
-    simp [zmod_to_bit, ZMod.val_one, Bit.toZMod]
-
-lemma bit_to_zmod_to_bit {n : Nat} [Fact (n > 1)] {x : Bit}:
-  zmod_to_bit (@Bit.toZMod n x) = x := by
-  cases x with
-  | zero =>
-    simp [zmod_to_bit, Bit.toZMod]
-  | one =>
-    simp [zmod_to_bit, Bit.toZMod]
-    simp [zmod_to_bit, ZMod.val_one, Bit.toZMod]
-
-def vector_zmod_to_bit {n d : Nat} (a : Vector (ZMod n) d) : Vector Bit d :=
-  Vector.map zmod_to_bit a
-
-lemma vector_zmod_to_bit_last {n d : Nat} {xs : Vector (ZMod n) (d+1)} :
-  (vector_zmod_to_bit xs).last = (zmod_to_bit xs.last) := by
-  simp [vector_zmod_to_bit, Vector.last]
-
-lemma vector_zmod_to_bit_to_zmod {n d : Nat} [Fact (n > 1)] {xs : Vector (ZMod n) d} (h : is_vector_binary xs) :
-  Vector.map Bit.toZMod (vector_zmod_to_bit xs) = xs := by
-  induction xs using Vector.inductionOn with
-  | h_nil => simp
-  | h_cons ih =>
-    simp [is_vector_binary_cons] at h
-    cases h
-    simp [vector_zmod_to_bit]
-    simp [vector_zmod_to_bit] at ih
-    rw [zmod_to_bit_to_zmod]
-    rw [ih]
-    assumption
-    assumption
-
-lemma vector_bit_to_zmod_to_bit {d n : Nat} [Fact (n > 1)] {xs : Vector Bit d} :
-  vector_zmod_to_bit (Vector.map (fun i => @Bit.toZMod n i) xs) = xs := by
-  induction xs using Vector.inductionOn with
-  | h_nil => simp
-  | h_cons ih =>
-    rename_i x xs
-    simp [vector_zmod_to_bit]
-    simp [vector_zmod_to_bit] at ih
-    simp [ih]
-    rw [bit_to_zmod_to_bit]
-
-lemma vector_zmod_to_bit_dropLast {n d : Nat} [Fact (n > 1)] {xs : Vector (ZMod n) (d+1)} (h : is_vector_binary xs) :
-  Vector.map Bit.toZMod (Vector.dropLast (vector_zmod_to_bit xs)) = (Vector.dropLast xs) := by
-  simp [dropLast_symm]
-  rw [vector_zmod_to_bit_to_zmod]
-  assumption
+lemma is_vector_binary_snoc {N : ℕ} {vs : Vector (ZMod N) n} {v}: is_vector_binary (vs.snoc v) ↔ is_vector_binary vs ∧ is_bit v := by
+  simp [is_vector_binary]
+  apply Iff.intro
+  . intro h
+    exact ⟨(fun a ha => h a (Or.inl ha)), h v (Or.inr rfl)⟩
+  . intro h
+    rcases h with ⟨hl, hr⟩
+    intro a ha
+    cases ha
+    . apply hl; assumption
+    . subst_vars; assumption
 
 @[simp]
-theorem vector_zmod_to_bit_cons : vector_zmod_to_bit (x ::ᵥ xs) = (nat_to_bit x.val) ::ᵥ vector_zmod_to_bit xs := by
-  rfl
+lemma is_vector_binary_map_toZMod {N n : ℕ} {v : Vector Bool n}: is_vector_binary (Vector.map (Bool.toZMod (N := N)) v) := by
+  simp [is_vector_binary]
+  tauto
 
-def recover_binary_nat {d} (rep : Vector Bit d): Nat := match d with
-  | 0 => 0
-  | Nat.succ _ => rep.head.toNat + 2 * recover_binary_nat rep.tail
-
-def recover_binary_zmod {d n} (rep : Vector Bit d) : ZMod n := match d with
-  | 0 => 0
-  | Nat.succ _ => rep.head.toZMod + 2 * recover_binary_zmod rep.tail
+lemma is_vector_binary_iff_exists_bool_vec {N n : ℕ} {v : Vector (ZMod N) n}:
+  is_vector_binary v ↔ ∃x : Vector Bool n, v = x.map Bool.toZMod := by
+  induction n with
+  | zero => simp [is_vector_binary]
+  | succ n ih =>
+    cases v using Vector.casesOn with | cons hd tl =>
+    simp only [is_vector_binary_cons, ih]
+    apply Iff.intro
+    . intro ⟨bhd, ⟨tl, btl⟩⟩
+      cases bhd with
+      | inl hz =>
+        exists (false ::ᵥ tl)
+        simp [*]
+      | inr ho =>
+        exists true ::ᵥ tl
+        simp [*]
+    . intro ⟨x, hx⟩
+      cases x using Vector.casesOn with | cons hd' tl' =>
+      simp at hx
+      injection hx with hx
+      injection hx with hx htl
+      simp [hx]
+      exists tl'
+      apply Vector.eq
+      simp [Vector.toList, htl]
+      rfl
 
 def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head + 2 * recover_binary_zmod' rep.tail
 
+protected theorem Nat.add_lt_add_of_le_of_lt {a b c d : Nat} (hle : a ≤ b) (hlt : c < d) :
+    a + c < b + d :=
+  Nat.lt_of_le_of_lt (Nat.add_le_add_right hle _) (Nat.add_lt_add_left hlt _)
+
+namespace Fin
+
+def msb {d:ℕ} (v : Fin (2^d.succ)): Bool := v.val ≥ 2^d
+
 @[simp]
-theorem recover_binary_nat_zero {n : Nat} : recover_binary_nat (Vector.replicate n Bit.zero) = 0 := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [recover_binary_nat, ih]
+theorem msb_false_of_lt {d:ℕ} {v : Fin (2^d.succ)} (h : v.val < 2^d): msb v = false := by
+  simpa [msb]
 
-theorem recover_binary_zmod_bit {d n} [Fact (n > 1)]  {w : Vector (ZMod n) d}:
-  is_vector_binary w → recover_binary_zmod' w = recover_binary_zmod (vector_zmod_to_bit w) := by
-  intro h
-  induction w using Vector.inductionOn with
-  | h_nil => rfl
-  | h_cons ih =>
-    simp [recover_binary_zmod', recover_binary_zmod]
-    rw [is_vector_binary_cons] at h
-    cases h
-    rw [ih]
-    rotate_left
-    . assumption
-    rename (is_bit _) => isb
-    cases isb <;> {
-      subst_vars
-      have : n > 1 := (inferInstance : Fact (n > 1)).elim
-      induction n with
-      | zero => simp
-      | succ n =>
-        induction n with
-        | zero =>
-          simp
-        | succ =>
-          rw [ZMod.val]
-          simp
-          rfl
-    }
+@[simp]
+theorem msb_true_of_ge {d:ℕ} {v : Fin (2^d.succ)} (h : v.val ≥ 2^d): msb v = true := by
+  simpa [msb]
 
-theorem mod_two_bit_back : (Bit.toNat $ bit_mod_two n) = n % 2 := by
-  simp [bit_mod_two]
-  split
-  . simp [*]
-  . simp [*]
-  . contradiction
+def lsbs {d:ℕ} (v : Fin (2^d.succ)): Fin (2^d) := ⟨v.val - (msb v).toNat * 2^d, prop⟩ where
+  prop := by
+    cases Nat.lt_or_ge v.val (2^d) with
+    | inl lt =>
+      simp [lt, Bool.toNat]
+    | inr ge =>
+      apply Nat.sub_lt_left_of_lt_add
+      . simp [msb, ge, Bool.toNat]
+      . have : 2^d + 2^d = 2^d.succ := by simp_arith [pow_succ]
+        simp [msb, ge, Bool.toNat, v.prop, this]
 
-def is_binary_of {n d} (inp : ZMod n) (rep : Vector Bit d): Prop := inp = recover_binary_zmod rep
+private lemma snoc_step_helper {d : ℕ} {b : Bool} {v : Fin (2^d)}:
+  b.toNat + 2 * v.val < 2^d.succ := by
+  have : b.toNat ≤ 1 := by cases b <;> simp
+  simp_arith
+  calc
+    b.toNat + 2 * v.val + 1 ≤ 2 * v.val + 2 := by cases b <;> { simp_arith }
+    _ = 2 * (v.val + 1) := by simp_arith
+    _ ≤ 2 * 2^d := by
+      have := Fin.prop v
+      simp_arith [-Fin.is_lt] at this
+      simp_arith [this]
+    _ = 2^(d+1) := by simp [pow_succ]
 
-def nat_n_bits (a : Nat) (digits : Nat) : Nat :=
-  Bitvec.bitsToNat (List.reverse (List.take digits (List.reverse (Nat.bits a))))
+private lemma cons_step_helper {d : ℕ} {b : Bool} {v : Fin (2^d)}:
+  b.toNat * 2^d + v.val < 2^d.succ := by
+  have : 2 ^ d.succ = 2^d + 2^d := by simp_arith [pow_succ]
+  apply Nat.add_lt_add_of_le_of_lt
+  . cases b <;> simp
+  . apply Fin.is_lt
 
-lemma even_ne_odd (a b : Nat): 2 * a ≠ 2 * b + 1 := by
-  intro h
-  induction a generalizing b with
-  | zero => cases h
-  | succ a1 ih =>
-    rw [Nat.mul_succ] at h
-    cases b
-    . cases h
-    . simp_arith at h
-      apply ih _ h
+theorem msbs_lsbs_decomposition {d} {v : Fin (2^d.succ)}:
+  v = ⟨(msb v).toNat * 2^d + (lsbs v).val, cons_step_helper⟩  := by
+    cases Decidable.em (v.val ≥ 2^d) <;> simp [msb, lsbs, *, Bool.toNat]
 
-lemma parity_bit_unique (a b : Bit) (c d : Nat) : a + 2 * c = b + 2 * d -> a = b ∧ c = d := by
-  intro h; cases a <;> cases b <;> simp [Bit.toNat, *] at *
-  . assumption
-  . rw [add_comm] at h; apply even_ne_odd _ _ h
-  . rw [add_comm, eq_comm] at h; apply even_ne_odd _ _ h
-  . assumption
-
-theorem binary_nat_unique {d} (rep1 rep2 : Vector Bit d):
-  recover_binary_nat rep1 = recover_binary_nat rep2 -> rep1 = rep2 := by
-  intro h
-  induction d with
-  | zero => apply Vector.zero_subsingleton.allEq;
-  | succ d1 ih =>
-    simp [recover_binary_nat] at h
-    rw [←Vector.cons_head_tail rep1]
-    rw [←Vector.cons_head_tail rep2]
-    have h := parity_bit_unique _ _ _ _ h
-    cases h
-    apply congr
-    . apply congrArg; assumption
-    . apply ih; assumption
-
-theorem binary_nat_lt {d} (rep : Vector Bit d): recover_binary_nat rep < 2 ^ d := by
-  induction d with
-  | zero => simp [recover_binary_nat]
-  | succ _ ih =>
-    simp [recover_binary_nat]
-    cases rep.head <;> (
-      simp [*, Bit.toNat]
-      simp_arith
-      let h := ih rep.tail
-      let h := Nat.le.dest h
-      cases h; rename_i w h
-      simp_arith at h
-      rw [Nat.pow_succ]
-    )
-    . apply @Nat.le.intro _ _ (w + w + 1)
-      linarith
-    . apply @Nat.le.intro _ _ (w + w)
-      linarith
-
-theorem binary_nat_zmod_equiv {n d} (rep : Vector Bit d):
-  (recover_binary_nat rep : ZMod n) = (recover_binary_zmod rep) := by
-  induction d with
-  | zero => simp [recover_binary_nat, recover_binary_zmod]
-  | succ d' ih =>
-    simp [recover_binary_nat, recover_binary_zmod]
-    cases rep.head <;> simp [Bit.toNat, Bit.toZMod, *]
-
-theorem binary_nat_zmod_equiv_mod_p {n d} (rep : Vector Bit d):
-  (recover_binary_zmod rep : ZMod n).val = recover_binary_nat rep % n := by
-  rw [←binary_nat_zmod_equiv]
-  apply ZMod.val_nat_cast
-
-theorem binary_zmod_same_as_nat {n d} (rep : Vector Bit d):
-  2 ^ d < n ->
-  (recover_binary_zmod rep : ZMod n).val = recover_binary_nat rep := by
-  intro d_small
-  rw [binary_nat_zmod_equiv_mod_p]
-  apply Nat.mod_eq_of_lt
-  apply @lt_trans _ _ _ (2^d)
-  . apply binary_nat_lt
-  . assumption
-
-theorem binary_zmod_unique {n d} (rep1 rep2 : Vector Bit d):
-  2 ^ d < n ->
-  (recover_binary_zmod rep1 : ZMod n) = (recover_binary_zmod rep2 : ZMod n) ->
-  rep1 = rep2 := by
-  intro d_small
-  intro same_recs
-  have same_vals : (recover_binary_zmod rep1 : ZMod n).val = (recover_binary_zmod rep2 : ZMod n).val := by
-    rw [same_recs]
-  rw [binary_zmod_same_as_nat rep1 d_small] at same_vals
-  rw [binary_zmod_same_as_nat rep2 d_small] at same_vals
-  exact binary_nat_unique _ _ same_vals
-
-theorem recover_binary_nat_to_bits_le {w : Vector Bit d}:
-  recover_binary_nat w = v ↔
-  nat_to_bits_le d v = some w := by
+theorem msb_lsbs_decomposition_unique {d}  {v : Fin (2^d.succ)} {msb' : Bool} {lsbs' : Fin (2^d)} {h}:
+  v = ⟨(msb'.toNat * 2^d) + lsbs'.val, h⟩ ↔ msb' = msb v ∧ lsbs' = lsbs v := by
   apply Iff.intro
-  . induction d generalizing v with
-    | zero =>
-      cases w using Vector.casesOn
-      intro h; cases h; rfl
-    | succ d ih =>
-      cases w using Vector.casesOn; rename_i hd tl;
-      simp [recover_binary_nat, nat_to_bits_le]
-      intro h
-      rw [ih (v := v/2) (w := tl)]
-      . conv => lhs; whnf
-        congr
-        rw [←Nat.mod_add_div (m := v) (k := 2), ←mod_two_bit_back] at h
-        have := And.left (parity_bit_unique _ _ _ _ h)
-        apply Eq.symm
-        assumption
-      . subst_vars
-        unfold Bit.toNat
-        rw [Nat.add_div]
-        cases hd
-        . simp
-        . simp
-        . simp_arith
-  . induction d generalizing v with
-    | zero =>
-      cases w using Vector.casesOn
-      simp [recover_binary_nat, nat_to_bits_le]
-      tauto
-    | succ d ih =>
-      cases w using Vector.casesOn
-      simp [recover_binary_nat, nat_to_bits_le, Bind.bind]
-      intro tl htl veq
-      rw [Vector.vector_eq_cons] at veq
-      cases veq
-      subst_vars
-      rw [ih (v := v/2)]
-      . rw [mod_two_bit_back]
-        simp [Nat.mod_add_div]
-      . assumption
-
-theorem recover_binary_zmod'_to_bits_le {n : Nat} [Fact (n > 1)] {v : ZMod n} {w : Vector (ZMod n) d}:
-  2 ^ d < n →
-  is_vector_binary w →
-  recover_binary_zmod' w = v →
-  nat_to_bits_le d v.val = some (vector_zmod_to_bit w) := by
-  intros
-  rw [←recover_binary_nat_to_bits_le]
-  subst_vars
-  rw [recover_binary_zmod_bit]
-  . apply Eq.symm
-    apply binary_zmod_same_as_nat
-    assumption
-  . assumption
-
-theorem zmod_to_bit_coe {n : Nat} [Fact (n > 1)] {w : Vector Bit d} :
-  vector_zmod_to_bit (Vector.map (Bit.toZMod (n := n)) w) = w := by
-  induction w using Vector.inductionOn with
-  | h_nil => rfl
-  | h_cons ih =>
-    simp [vector_zmod_to_bit] at ih
-    simp [vector_zmod_to_bit, ih]
-    congr
-    unfold Bit.toZMod
-    split <;> {
-      have : n > 1 := (inferInstance : Fact (n > 1)).elim
-      induction n with
-      | zero =>
-        apply absurd this
-        simp
-      | succ n =>
-        induction n with
-        | zero =>
-          apply absurd this
-          simp
-        | succ =>
-          simp
-          rfl
-    }
-
-theorem vector_binary_of_bit_to_zmod {n : Nat} [Fact (n > 1)] {w : Vector Bit d }:
-  is_vector_binary (w.map (Bit.toZMod (n := n))) := by
-  induction w using Vector.inductionOn with
-  | h_nil => trivial
-  | h_cons ih =>
-    simp [is_vector_binary_cons]
+  . rintro ⟨_⟩
     apply And.intro
-    . unfold Bit.toZMod
-      split <;> {
-        have : n > 1 := (inferInstance : Fact (n > 1)).elim
-        induction n with
-        | zero =>
-          apply absurd this
-          simp
-        | succ n =>
-          induction n with
-          | zero =>
-            apply absurd this
-            simp
-          | succ =>
-            simp [is_bit]
+    . cases msb' <;> {
+        simp [msb, Bool.toNat]
       }
-    . apply ih
+    . cases msb' <;> {
+      have : ¬ 2^d ≤ lsbs'.val := not_le_of_lt (Fin.is_lt lsbs')
+      simp [lsbs, Bool.toNat, msb, this]
+    }
+  . rintro ⟨⟨_⟩, ⟨_⟩⟩
+    apply Fin.eq_of_veq
+    cases Decidable.em (2^d ≤ v.val) <;> simp [msb, lsbs, *, Bool.toNat]
 
-theorem recover_binary_of_to_bits {n : Nat} [Fact (n > 1)] {w : Vector Bit d} {v : ZMod n}:
-  nat_to_bits_le d v.val = some w →
-  recover_binary_zmod' (w.map Bit.toZMod) = v := by
-  rw [←recover_binary_nat_to_bits_le, recover_binary_zmod_bit, zmod_to_bit_coe]
-  intro h
-  rw [←binary_nat_zmod_equiv]
-  rw [h]
-  simp [ZMod.val_cast_of_lt]
-  apply vector_binary_of_bit_to_zmod
+@[simp]
+theorem lsbs_of_msb_lsbs_decomposition {d} {msb' : Bool} {lsbs' : Fin (2^d)} {h}:
+  lsbs ⟨(msb'.toNat * 2^d) + lsbs'.val, h⟩ = lsbs' := by
+  apply eq_comm.mp
+  refine (msb_lsbs_decomposition_unique.mp (Eq.refl _)).2
 
-theorem nat_to_bits_le_some_of_lt : n < 2 ^ d → ∃p, nat_to_bits_le d n = some p := by
-  induction d generalizing n with
-  | zero => intro h; simp at h; rw [h]; exists Vector.nil
+@[simp]
+theorem msb_of_msb_lsbs_decomposition {d} {msb' : Bool} {lsbs' : Fin (2^d)} {h}:
+  msb (⟨(msb'.toNat * 2^d) + lsbs'.val, h⟩: Fin (2^d.succ)) = msb' := by
+  apply eq_comm.mp
+  refine (msb_lsbs_decomposition_unique.mp (Eq.refl _)).1
+
+def toBitsBE {d : ℕ} (v : Fin (2^d)): Vector Bool d := match d with
+  | 0 => Vector.nil
+  | Nat.succ _ => msb v ::ᵥ (lsbs v).toBitsBE
+
+def toBitsLE {d : ℕ} (v : Fin (2^d)): Vector Bool d := v.toBitsBE.reverse
+
+@[simp]
+theorem lsbs_eq_val_of_lt {d:ℕ} {v : Fin (2^d.succ)} (h : v.val < 2^d): lsbs v = ⟨v, h⟩ := by
+  simp [lsbs, *, Bool.toNat]
+
+def ofBitsBE {d : ℕ} (v : Vector Bool d): Fin (2^d) := match d with
+  | 0 => ⟨0, by decide⟩
+  | d + 1 =>
+    let proof := by
+      have : 2^d.succ = 2^d + 2^d := by simp_arith [pow_succ]
+      rw [this]
+      apply Nat.add_lt_add_of_le_of_lt
+      . cases v.head <;> simp
+      . apply Fin.prop
+    ⟨(v.head.toNat * 2^d + (ofBitsBE v.tail).val), proof⟩
+
+theorem ofBitsBE_snoc {d : ℕ} {v : Bool} {vs : Vector Bool d}:
+  ofBitsBE (vs.snoc v) = ⟨v.toNat + 2 * (ofBitsBE vs).val, snoc_step_helper⟩ := by
+  induction d with
+  | zero =>
+    cases vs using Vector.casesOn
+    simp [ofBitsBE]
   | succ d ih =>
-    intro h
-    have := ih (n := n / 2) (by
-        have : 2 ^ d = (2 ^ d.succ) / 2 := by
-          simp [Nat.pow_succ]
-        rw [this]
-        apply Nat.div_lt_div_of_lt_of_dvd
-        simp [Nat.pow_succ]
-        assumption
-      )
-    rcases this with ⟨_, h⟩
-    apply Exists.intro
-    unfold nat_to_bits_le
-    simp [h, Bind.bind]
+    unfold ofBitsBE
+    simp_arith [Vector.tail_snoc, Vector.head_snoc, ih, Nat.pow_succ]
+    cases vs.head <;> simp_arith [Bool.toNat]
+
+def ofBitsLE {d : ℕ} (v : Vector Bool d): Fin (2^d) := ofBitsBE v.reverse
+
+@[simp]
+lemma lsbs_ofBitsBE_eq_ofBitsBE_tail {d : ℕ} {v : Vector Bool d.succ}:
+  lsbs (ofBitsBE v) = ofBitsBE v.tail := by
+  induction d with
+  | zero => simp [ofBitsBE, lsbs]
+  | succ d ih =>
+    cases v using Vector.casesOn with | cons hd tl =>
+    rw [ofBitsBE]
+    simp [ih]
+
+@[simp]
+lemma msb_ofBitsBE_eq_head {d : ℕ} {v : Vector Bool d.succ}:
+  msb (ofBitsBE v) = v.head := by
+  cases v using Vector.casesOn with | cons hd tl =>
+  rw [ofBitsBE]
+  simp
+
+@[simp]
+lemma toBitsBE_ofBitsBE_eq_self {d : ℕ} {v : Vector Bool d}:
+  toBitsBE (ofBitsBE v) = v := by
+  induction d with
+  | zero => simp
+  | succ d ih => simp [toBitsBE, ih]
+
+@[simp]
+lemma toBitsLE_ofBitsLE_eq_self {d : ℕ} {v : Vector Bool d}:
+  toBitsLE (ofBitsLE v) = v := by
+  simp [toBitsLE, ofBitsLE]
+
+@[simp]
+lemma ofBitsBE_toBitsBE_eq_self {d : ℕ} {v : Fin (2^d)}:
+  ofBitsBE (toBitsBE v) = v := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+    rw [msbs_lsbs_decomposition (v := v)]
+    simp [toBitsBE, ofBitsBE, ih]
+
+@[simp]
+lemma ofBitsLE_toBitsLE_eq_self {d : ℕ} {v : Fin (2^d)}:
+  ofBitsLE (toBitsLE v) = v := by
+  simp [toBitsLE, ofBitsLE]
+
+@[simp]
+lemma toBitsBE_injective : toBitsBE a = toBitsBE b ↔ a = b := by
+  apply Iff.intro
+  . intro h
+    have := congrArg ofBitsBE h
+    simpa [this]
+  . intro; simp [*]
+
+@[simp]
+lemma toBitsLE_injective : toBitsLE a = toBitsLE b ↔ a = b := by
+  simp [toBitsLE]
+
+end Fin
+
+theorem recover_binary_zmod'_map_toZMod_eq_Fin_ofBitsLE {N l : ℕ} {v : Vector Bool l}:
+  recover_binary_zmod' (Vector.map (Bool.toZMod (N := N)) v) = (Fin.ofBitsLE v).val := by
+  induction l with
+  | zero => simp [recover_binary_zmod']
+  | succ l ih =>
+    cases v using Vector.casesOn with | cons hd tl =>
+    simp [recover_binary_zmod', Fin.ofBitsLE, Fin.ofBitsBE_snoc, ih]
     rfl
-
-def fin_to_bits_le {d : Nat} (n : Fin (2 ^ d)): Vector Bit d := match h: nat_to_bits_le d n.val with
-| some r => r
-| none => False.elim (by
-    have := nat_to_bits_le_some_of_lt n.prop
-    cases this
-    simp [*] at h
-  )
-
-lemma fin_to_bits_recover_binary {D n : Nat } [Fact (n > 1)] (Index : (ZMod n)) (ix_small : Index.val < 2^D) :
-  recover_binary_zmod' (Vector.map Bit.toZMod (fin_to_bits_le { val := ZMod.val Index, isLt := ix_small })) = Index := by
-  rw [recover_binary_of_to_bits]
-  simp [fin_to_bits_le]
-  split
-  . assumption
-  . contradiction
-
-lemma fin_to_bits_le_is_some {depth : Nat} {idx : Nat} (h : idx < 2 ^ depth) :
-  nat_to_bits_le depth idx = some (fin_to_bits_le idx) := by
-  simp [fin_to_bits_le]
-  split
-  . rename_i hnats
-    rw [Nat.mod_eq_of_lt] at hnats
-    . simp [hnats]
-    . simp [h]
-  . contradiction
-
-theorem fin_to_bits_le_to_recover_binary_zmod' {n d : Nat} [Fact (n > 1)] {v : ZMod n} {w : Vector (ZMod n) d} {h : v.val < 2^d }:
-  n > 2^d →
-  is_vector_binary w →
-  recover_binary_zmod' w = v →
-  fin_to_bits_le ⟨v.val, by simp[h]⟩ = vector_zmod_to_bit w := by
-  intros
-  have : some (fin_to_bits_le ⟨v.val, by simp[h]⟩) = some (vector_zmod_to_bit w) := by
-    rw [<-recover_binary_zmod'_to_bits_le]
-    rotate_left
-    linarith
-    assumption
-    assumption
-    simp [recover_binary_nat_to_bits_le]
-    simp [fin_to_bits_le]
-    split
-    rename_i h
-    simp [h]
-    contradiction
-  simp at this
-  rw [this]
-
-lemma vector_bit_to_zmod_last {d n : Nat} [Fact (n > 1)] {xs : Vector Bit (d+1)} :
-  (zmod_to_bit (Vector.last (Vector.map (fun i => @Bit.toZMod n i) xs))) = Vector.last xs := by
-  cases xs using Vector.casesOn
-  simp
-  rename_i x xs
-  rw [<-vector_zmod_to_bit_last]
-  simp
-  have hx : nat_to_bit (ZMod.val (@Bit.toZMod n x)) = x := by
-    simp [Bit.toZMod, is_bit, nat_to_bit]
-    cases x
-    . simp
-    . simp [ZMod.val_one]
-  have hxs : vector_zmod_to_bit (Vector.map (fun i => @Bit.toZMod n i) xs) = xs := by
-    simp [vector_bit_to_zmod_to_bit]
-  rw [hx, hxs]
-
-@[elab_as_elim]
-def bitCases' {n : Nat} {C : Subtype (α := ZMod n.succ.succ) is_bit → Sort _} (v : Subtype (α := ZMod n.succ.succ) is_bit)
-  (zero : C bZero)
-  (one : C bOne): C v := by
-  rcases v with ⟨v, h⟩
-  rcases v with ⟨v, _⟩
-  cases v with
-  | zero => exact zero
-  | succ v => cases v with
-    | zero => exact one
-    | succ v =>
-      apply False.elim
-      rcases h with h | h <;> {
-        injection h with h
-        simp at h
-      }
-
-theorem isBitCases (b : Subtype (α := ZMod n) is_bit): b = bZero ∨ b = bOne := by
-  cases b with | mk _ prop =>
-  cases prop <;> {subst_vars ; tauto }
-
-
-def bitCases : { v : ZMod (Nat.succ (Nat.succ n)) // is_bit v} → Bit
-  | ⟨0, _⟩ => Bit.zero
-  | ⟨1, _⟩ => Bit.one
-  | ⟨⟨Nat.succ (Nat.succ i), _⟩, h⟩ => False.elim (by
-      cases h <;> {
-        rename_i h
-        injection h with h;
-        rw [Nat.mod_eq_of_lt] at h
-        . injection h; try (rename_i h; injection h)
-        . simp
-      }
-    )
-
-@[simp] lemma ne_1_0 {n:Nat}: ¬(1 : ZMod (n.succ.succ)) = (0 : ZMod (n.succ.succ)) := by
-  intro h;
-  conv at h => lhs; whnf
-  conv at h => rhs; whnf
-  injection h with h
-  injection h
-
-@[simp] lemma ne_0_1 {n:Nat}: ¬(0 : ZMod (n.succ.succ)) = (1 : ZMod (n.succ.succ)) := by
-  intro h;
-  conv at h => lhs; whnf
-  conv at h => rhs; whnf
-  injection h with h
-  injection h
-
-
-@[simp]
-lemma bitCases_eq_0 : bitCases b = Bit.zero ↔ b = bZero := by
-  cases b with | mk val prop =>
-  cases prop <;> {
-    subst_vars
-    conv => lhs; lhs; whnf
-    simp
-  }
-
-@[simp]
-lemma bitCases_eq_1 : bitCases b = Bit.one ↔ b = bOne := by
-  cases b with | mk val prop =>
-  cases prop <;> {
-    subst_vars
-    conv => lhs; lhs; whnf
-    simp
-  }
-
-@[simp]
-lemma bitCases_bZero {n:Nat}: bitCases (@bZero (n + 2)) = Bit.zero := by rfl
-
-@[simp]
-lemma bitCases_bOne {n:Nat}: bitCases (@bOne (n+2)) = Bit.one := by rfl
-
-theorem is_vector_binary_iff_allIxes_is_bit {n : Nat} {v : Vector (ZMod n) d}: Vector.allIxes is_bit v ↔ is_vector_binary v := by
-  induction v using Vector.inductionOn with
-  | h_nil => simp [is_vector_binary]
-  | h_cons ih => conv => lhs; simp [ih]
-
-theorem fin_to_bits_le_recover_binary_nat {v : Vector Bit d}:
-  fin_to_bits_le ⟨recover_binary_nat v, binary_nat_lt _⟩ = v := by
-  unfold fin_to_bits_le
-  split
-  . rename_i h
-    rw [←recover_binary_nat_to_bits_le] at h
-    exact binary_nat_unique _ _ h
-  . contradiction
-
-theorem SubVector_map_cast_lower {v : SubVector α n prop} {f : α → β }:
-  (v.val.map f) = v.lower.map fun (x : Subtype prop) => f x.val := by
-  rw [←Vector.ofFn_get v.val]
-  simp only [SubVector.lower, GetElem.getElem, Vector.map_ofFn]
-
-@[simp]
-theorem recover_binary_nat_fin_to_bits_le {v : Fin (2^d)}:
-  recover_binary_nat (fin_to_bits_le v) = v.val := by
-  unfold fin_to_bits_le
-  split
-  . rename_i h
-    rw [←recover_binary_nat_to_bits_le] at h
-    assumption
-  . contradiction
-
-@[simp]
-theorem SubVector_lower_lift : SubVector.lift (SubVector.lower v) = v := by
-  unfold SubVector.lift
-  unfold SubVector.lower
-  apply Subtype.eq
-  simp [GetElem.getElem]
-
-@[simp]
-theorem SubVector_lift_lower : SubVector.lower (SubVector.lift v) = v := by
-  unfold SubVector.lift
-  unfold SubVector.lower
-  apply Subtype.eq
-  simp [GetElem.getElem]
