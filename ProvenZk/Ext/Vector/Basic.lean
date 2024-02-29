@@ -1,11 +1,7 @@
---import Mathlib.Data.Vector.Snoc
---import Mathlib.Data.Matrix.Basic
---import Mathlib.Data.List.Defs
-import Mathlib.Data.Vector
-import Mathlib.Data.Vector.Basic
 import Mathlib.Data.Vector.Snoc
+import Mathlib.Data.Vector.Mem
 import Mathlib.Data.Matrix.Basic
-import Std.Data.Fin.Lemmas
+import Mathlib.Data.List.Defs
 
 import ProvenZk.Ext.Fin
 import ProvenZk.Ext.Range
@@ -113,10 +109,10 @@ macro_rules
 
 def to_column (v : Vector α n) : Matrix (Fin n) Unit α := Matrix.of (fun i _ => v.get i)
 
-theorem vector_eq_cons : (x ::ᵥ xs) = (y ::ᵥ ys) ↔ x = y ∧ xs = ys := by
+theorem eq_cons : (x ::ᵥ xs) = (y ::ᵥ ys) ↔ x = y ∧ xs = ys := by
   simp [Vector.eq_cons_iff]
 
-theorem vector_reverse_eq {x y : Vector α n} : (x.reverse = y) ↔ (x = y.reverse) := by
+theorem reverse_eq {x y : Vector α n} : (x.reverse = y) ↔ (x = y.reverse) := by
   apply Iff.intro
   case mp => {
     intro
@@ -129,31 +125,28 @@ theorem vector_reverse_eq {x y : Vector α n} : (x.reverse = y) ↔ (x = y.rever
     simp
   }
 
-@[simp]
-theorem vector_replicate_succ : Vector.replicate (Nat.succ n) a = a ::ᵥ Vector.replicate n a := by
-  rfl
-
-theorem vector_replicate_succ_snoc : Vector.replicate (Nat.succ n) a = (Vector.replicate n a).snoc a := by
+theorem replicate_succ_snoc : Vector.replicate (Nat.succ n) a = (Vector.replicate n a).snoc a := by
   induction n with
   | zero => rfl
   | succ n ih =>
     conv => rhs; simp [←ih]
 
 @[simp]
-theorem vector_replicate_reverse : Vector.reverse (Vector.replicate n a) = Vector.replicate n a := by
+theorem replicate_reverse : Vector.reverse (Vector.replicate n a) = Vector.replicate n a := by
   induction n with
   | zero => rfl
   | succ n ih =>
-    simp [ih, ←vector_replicate_succ_snoc]
+    simp [ih, ←replicate_succ_snoc]
 
 @[simp]
-theorem vector_map_replicate : Vector.map f (Vector.replicate n a) = Vector.replicate n (f a) := by
+theorem map_replicate : Vector.map f (Vector.replicate n a) = Vector.replicate n (f a) := by
   induction n with
   | zero => rfl
   | succ n ih =>
     simp [ih]
 
-theorem vector_reverse_inj {a b : Vector α d} : Vector.reverse a = Vector.reverse b ↔ a = b := by
+@[simp]
+theorem reverse_inj {a b : Vector α d} : Vector.reverse a = Vector.reverse b ↔ a = b := by
   apply Iff.intro
   . intro h
     induction d with
@@ -172,7 +165,8 @@ theorem vector_reverse_inj {a b : Vector α d} : Vector.reverse a = Vector.rever
       assumption
   . intro h; congr
 
-theorem vector_map_inj {a b : Vector α d} {f_inj : ∀ a b, f a = f b → a = b}: a.map f = b.map f ↔ a = b := by
+@[simp]
+theorem map_inj {a b : Vector α d} {f_inj : ∀ a b, f a = f b → a = b}: a.map f = b.map f ↔ a = b := by
   apply Iff.intro
   . intro h
     induction d with
@@ -195,20 +189,17 @@ def dropLast { n : Nat } (v : Vector α n) : Vector α (n-1) := ⟨List.dropLast
 lemma toList_dropLast { n : Nat } (v : Vector α n) : v.dropLast.toList = v.toList.dropLast := by
   rfl
 
-lemma vector_list_vector {d} {x₁ x₂ : α} {xs : Vector α d} : (x₁ ::ᵥ x₂ ::ᵥ xs).dropLast = x₁ ::ᵥ (x₂ ::ᵥ xs).dropLast := by
-  rfl
+@[simp]
+theorem getElem_zero {vs : Vector i n} : (v ::ᵥ vs)[0] = v := by rfl
 
 @[simp]
-theorem vector_get_zero {vs : Vector i n} : (v ::ᵥ vs)[0] = v := by rfl
+theorem get_succ_fin {vs : Vector i n} {i : Fin n} : (v ::ᵥ vs)[i.succ] = vs[i] := by rfl
 
 @[simp]
-theorem vector_get_succ_fin {vs : Vector i n} {i : Fin n} : (v ::ᵥ vs)[i.succ] = vs[i] := by rfl
+theorem get_succ_nat {vs : Vector i n} {i : Nat} {h : i.succ < n.succ } : (v ::ᵥ vs)[i.succ]'h = vs[i]'(by linarith) := by rfl
 
 @[simp]
-theorem vector_get_succ_nat {vs : Vector i n} {i : Nat} {h : i.succ < n.succ } : (v ::ᵥ vs)[i.succ]'h = vs[i]'(by linarith) := by rfl
-
-@[simp]
-theorem vector_get_snoc_last { vs : Vector α n }:
+theorem get_snoc_last { vs : Vector α n }:
   (vs.snoc v).get (Fin.last n) = v := by
   induction n with
   | zero =>
@@ -233,16 +224,16 @@ lemma snoc_get_castSucc {vs : Vector α n}: (vs.snoc v).get (Fin.castSucc i) = v
     | zero => simp
     | succ i => simp [Fin.castSucc_succ_eq_succ_castSucc, ih]
 
-theorem vector_get_val_getElem {v : Vector α n} {i : Fin n}: v[i.val]'(i.prop) = v.get i := by
+theorem get_val_getElem {v : Vector α n} {i : Fin n}: v[i.val]'(i.prop) = v.get i := by
   rfl
 
 theorem getElem_def {v : Vector α n} {i : Nat} {prop}: v[i]'prop = v.get ⟨i, prop⟩ := by
   rfl
 
 @[simp]
-lemma vector_get_snoc_fin_prev {vs : Vector α n} {v : α} {i : Fin n}:
+lemma get_snoc_fin_prev {vs : Vector α n} {v : α} {i : Fin n}:
   (vs.snoc v)[i.val]'(by (have := i.prop); linarith) = vs[i.val]'(i.prop) := by
-  simp [vector_get_val_getElem, getElem_def, Fin.castSucc_def]
+  simp [get_val_getElem, getElem_def, Fin.castSucc_def]
 
 theorem ofFn_snoc' { fn : Fin (Nat.succ n) → α }:
   Vector.ofFn fn = Vector.snoc (Vector.ofFn (fun (x : Fin n) => fn (Fin.castSucc x))) (fn n) := by
@@ -256,44 +247,10 @@ theorem ofFn_snoc' { fn : Fin (Nat.succ n) → α }:
     congr
     simp [Nat.mod_eq_of_lt]
 
-def allIxes (f : α → Prop) : Vector α n → Prop := fun v => ∀(i : Fin n), f v[i]
+instance : Membership α (Vector α n) := ⟨fun x xs => x ∈ xs.toList⟩
 
 @[simp]
-theorem allIxes_cons : allIxes f (v ::ᵥ vs) ↔ f v ∧ allIxes f vs := by
-  simp [allIxes, GetElem.getElem]
-  apply Iff.intro
-  . intro h
-    exact ⟨h 0, fun i => h i.succ⟩
-  . intro h i
-    cases i using Fin.cases
-    . simp [h.1]
-    . simp [h.2]
-
-@[simp]
-theorem allIxes_nil : allIxes f Vector.nil := by
-  simp [allIxes]
-
-theorem getElem_allIxes {v : { v: Vector α n // allIxes prop v  }} {i : Nat} { i_small : i < n}:
-  v.val[i]'i_small = ↑(Subtype.mk (v.val.get ⟨i, i_small⟩) (v.prop ⟨i, i_small⟩)) := by rfl
-
-theorem getElem_allIxes₂ {v : { v: Vector (Vector α m) n // allIxes (allIxes prop) v  }} {i j: Nat} { i_small : i < n} { j_small : j < m}:
-  (v.val[i]'i_small)[j]'j_small = ↑(Subtype.mk ((v.val.get ⟨i, i_small⟩).get ⟨j, j_small⟩) (v.prop ⟨i, i_small⟩ ⟨j, j_small⟩)) := by rfl
-
-theorem allIxes_indexed {v : {v : Vector α n // allIxes prop v}} {i : Nat} {i_small : i < n}:
-  prop (v.val[i]'i_small) := v.prop ⟨i, i_small⟩
-
-theorem allIxes_indexed₂ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes prop) v}}
-  {i : Nat} {i_small : i < c}
-  {j : Nat} {j_small : j < b}:
-  prop ((v.val[i]'i_small)[j]'j_small) :=
-  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩
-
-theorem allIxes_indexed₃ {v : {v : Vector (Vector (Vector α a) b) c // allIxes (allIxes (allIxes prop)) v}}
-  {i : Nat} {i_small : i < c}
-  {j : Nat} {j_small : j < b}
-  {k : Nat} {k_small : k < a}:
-  prop (((v.val[i]'i_small)[j]'j_small)[k]'k_small) :=
-  v.prop ⟨i, i_small⟩ ⟨j, j_small⟩ ⟨k, k_small⟩
+theorem mem_def {xs : Vector α n} {x} : x ∈ xs ↔ x ∈ xs.toList := by rfl
 
 @[simp]
 theorem map_ofFn {f : α → β} (g : Fin n → α) :
@@ -338,59 +295,99 @@ theorem append_inj {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}:
     subst_vars
     apply And.intro <;> rfl
 
-theorem allIxes_toList : Vector.allIxes prop v ↔ ∀ i, prop (v.toList.get i) := by
-  unfold Vector.allIxes
-  apply Iff.intro
-  . intro h i
-    rcases i with ⟨i, p⟩
-    simp at p
-    simp [GetElem.getElem, Vector.get] at h
-    have := h ⟨i, p⟩
-    conv at this => arg 1; whnf
-    exact this
-  . intro h i
-    simp [GetElem.getElem, Vector.get]
-    rcases i with ⟨i, p⟩
-    have := h ⟨i, by simpa⟩
-    conv at this => arg 1; whnf
-    exact this
-
-theorem allIxes_append {v₁ : Vector α n₁} {v₂ : Vector α n₂} : Vector.allIxes prop (v₁ ++ v₂) ↔ Vector.allIxes prop v₁ ∧ Vector.allIxes prop v₂ := by
-  simp [allIxes_toList]
+lemma eq_iff {n} {v w : Vector α n} : v = w ↔ v.toList = w.toList := by
   apply Iff.intro
   . intro h
-    apply And.intro
-    . intro i
-      rcases i with ⟨i, hp⟩
-      simp at hp
-      rw [←List.get_append]
-      exact h ⟨i, (by simp; apply Nat.lt_add_right; assumption)⟩
-    . intro i
-      rcases i with ⟨i, hp⟩
-      simp at hp
-      have := h ⟨n₁ + i, (by simpa)⟩
-      rw [List.get_append_right] at this
-      simp at this
-      exact this
-      . simp
-      . simpa
-  . intro ⟨l, r⟩
-    intro ⟨i, hi⟩
-    simp at hi
-    cases lt_or_ge i n₁ with
-    | inl hp =>
-      rw [List.get_append _ (by simpa)]
-      exact l ⟨i, (by simpa)⟩
-    | inr hp =>
-      rw [List.get_append_right]
-      have := r ⟨i - n₁, (by simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption )⟩
-      simp at this
-      simpa
-      . simp; exact LE.le.ge hp
-      . simp; apply Nat.sub_lt_left_of_lt_add; exact LE.le.ge hp; assumption
+    subst h
+    rfl
+  . intro h
+    apply Vector.eq
+    simp at h
+    assumption
 
-theorem SubVector_append {v₁ : Vector α d₁} {prop₁ : Vector.allIxes prop v₁ } {v₂ : Vector α d₂} {prop₂ : Vector.allIxes prop v₂}:
-  (Subtype.mk v₁ prop₁).val ++ (Subtype.mk v₂ prop₂).val =
-  (Subtype.mk (v₁ ++ v₂) (allIxes_append.mpr ⟨prop₁, prop₂⟩)).val := by eq_refl
+theorem append_inj_iff {v₁ w₁ : Vector α d₁} {v₂ w₂ : Vector α d₂}:
+  v₁ ++ v₂ = w₁ ++ w₂ ↔ v₁ = w₁ ∧ v₂ = w₂ := by
+  apply Iff.intro
+  . exact append_inj
+  . intro ⟨_, _⟩
+    simp [*]
+
+
+@[simp]
+theorem getElem_map {i n : ℕ} {h : i < n} {v : Vector α n} : (Vector.map f v)[i]'h = f (v[i]'h) := by
+  simp [getElem]
+
+theorem map_singleton {a : α} {f : α → β} : Vector.map f (a ::ᵥ Vector.nil) = (f a ::ᵥ Vector.nil) := by
+  rfl
+
+@[simp]
+lemma getElem_snoc_at_length {vs : Vector α n}: (vs.snoc v)[n]'(by simp_arith) = v := by
+  induction n with
+  | zero => cases vs using Vector.casesOn; rfl
+  | succ n ih => cases vs using Vector.casesOn; simp [ih]
+
+@[simp]
+lemma getElem_snoc_before_length {vs : Vector α n} {i : ℕ} (hp : i < n): (vs.snoc v)[i]'(by linarith) = vs[i]'hp := by
+  induction n generalizing i with
+  | zero => cases vs using Vector.casesOn; contradiction
+  | succ n ih =>
+    cases vs using Vector.casesOn;
+    cases i with
+    | zero => simp
+    | succ i => simp [ih (Nat.lt_of_succ_lt_succ hp)]
+
+
+def permute (fn : Fin m → Fin n) (v : Vector α n): Vector α m :=
+  Vector.ofFn (fun i => v[fn i])
+
+theorem permute_inj {n : Nat} {fn : Fin m → Fin n} (perm_surj : Function.Surjective fn): Function.Injective (permute (α := α) fn) := by
+  intro v₁ v₂ h
+  ext i
+  rcases perm_surj i with ⟨j, i_inv⟩
+  have : (permute fn v₁).get j = (permute fn v₂).get j := by rw [h]
+  simp [permute, GetElem.getElem] at this
+  subst_vars
+  assumption
+
+theorem map_permute {p : Fin m → Fin n} {f : α → β} {v : Vector α n}:
+  Vector.map f (permute p v) = permute p (v.map f) := by
+  simp [permute]
+
+theorem exists_succ_iff_exists_snoc {α d} {pred : Vector α (Nat.succ d) → Prop}:
+  (∃v, pred v) ↔ ∃vs v, pred (Vector.snoc vs v) := by
+  apply Iff.intro
+  . rintro ⟨v, hp⟩
+    cases v using Vector.revCasesOn
+    apply Exists.intro
+    apply Exists.intro
+    assumption
+  . rintro ⟨vs, v, hp⟩
+    exists vs.snoc v
+
+theorem exists_succ_iff_exists_cons {α d} {pred : Vector α (Nat.succ d) → Prop}:
+  (∃v, pred v) ↔ ∃v vs, pred (v ::ᵥ vs) := by
+  apply Iff.intro
+  . rintro ⟨v, hp⟩
+    cases v using Vector.casesOn
+    apply Exists.intro
+    apply Exists.intro
+    assumption
+  . rintro ⟨v, vs, hp⟩
+    exists (v ::ᵥ vs)
+
+@[simp]
+theorem snoc_eq : Vector.snoc xs x = Vector.snoc ys y ↔ xs = ys ∧ x = y := by
+  apply Iff.intro
+  . intro h
+    have := congrArg Vector.reverse h
+    simp at this
+    injection this with this
+    injection this with h t
+    simp [*]
+    apply Vector.eq
+    have := congrArg List.reverse t
+    simpa [this]
+  . intro ⟨_, _⟩
+    simp [*]
 
 end Vector
