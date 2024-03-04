@@ -216,13 +216,13 @@ lemma snoc_get_castSucc {vs : Vector α n}: (vs.snoc v).get (Fin.castSucc i) = v
   induction n with
   | zero =>
     cases i using Fin.cases with
-    | H0 => cases vs using Vector.casesOn with | cons hd tl => simp
-    | Hs i => cases i using finZeroElim
+    | zero => cases vs using Vector.casesOn with | cons hd tl => simp
+    | succ i => cases i using finZeroElim
   | succ n ih =>
     cases vs using Vector.casesOn with | cons hd tl =>
     cases i using Fin.cases with
-    | H0 => simp
-    | Hs i => simp [Fin.castSucc_succ_eq_succ_castSucc, ih]
+    | zero => simp
+    | succ i => simp [Fin.castSucc_succ_eq_succ_castSucc, ih]
 
 theorem get_val_getElem {v : Vector α n} {i : Fin n}: v[i.val]'(i.prop) = v.get i := by
   rfl
