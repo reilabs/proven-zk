@@ -41,7 +41,6 @@ def cmp_9 (a b out : ZMod N): Prop :=
   (a.val < b.val ∧ out = -1) ∨
   (a.val > b.val ∧ out = 1))
 
--- Inverse is calculated using a Hint at circuit execution
 def is_zero (a out: ZMod N): Prop := (a ≠ 0 ∧ out = 0) ∨ (a = 0 ∧ out = 1)
 def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
@@ -56,9 +55,6 @@ def le_9 (a b : ZMod N): Prop :=
   (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) = b.val ∧
   a.val <= b.val
 
--- `a(.val)` is always less than `N` because it's `ZMod`.
--- If `a` doesn't fit in `n`, then the result of `recover_binary_zmod'` is `a % 2^n`
--- If `a` fits `n`, the result is exact
 def to_binary (a : ZMod N) (d : Nat) (out : Vector (ZMod N) d): Prop :=
   @recover_binary_zmod' d N out = a ∧ is_vector_binary out
 def from_binary {d} (a : Vector (ZMod N) d) (out : ZMod N) : Prop :=
