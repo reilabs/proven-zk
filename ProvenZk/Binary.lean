@@ -107,6 +107,10 @@ lemma is_vector_binary_iff_exists_bool_vec {N n : ℕ} {v : Vector (ZMod N) n}:
       simp [Vector.toList, htl]
       rfl
 
+def recover_binary_nat {d} (rep : Vector Bool d): Nat := match d with
+  | 0 => 0
+  | Nat.succ _ => rep.head.toNat + 2 * recover_binary_nat rep.tail
+
 def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d with
   | 0 => 0
   | Nat.succ _ => rep.head + 2 * recover_binary_zmod' rep.tail
@@ -114,6 +118,26 @@ def recover_binary_zmod' {d n} (rep : Vector (ZMod n) d) : ZMod n := match d wit
 protected theorem Nat.add_lt_add_of_le_of_lt {a b c d : Nat} (hle : a ≤ b) (hlt : c < d) :
     a + c < b + d :=
   Nat.lt_of_le_of_lt (Nat.add_le_add_right hle _) (Nat.add_lt_add_left hlt _)
+
+def binary_length (n : Nat) : Nat := (Nat.log 2 n).succ
+
+def bit_mod_two (inp : Nat) : Bool := match h:inp%2 with
+ | 0 => false
+ | 1 => true
+ | x + 2 => False.elim (by
+    have := Nat.mod_lt inp (y := 2)
+    rw [h] at this
+    simp at this
+    contradiction
+ )
+
+def nat_to_bits_le_full_n (l : Nat): Nat → Vector Bool l := match l with
+  | 0 => fun _ => Vector.nil
+  | Nat.succ l => fun i =>
+    let x := i / 2
+    let y := bit_mod_two i
+    let xs := nat_to_bits_le_full_n l x
+    y ::ᵥ xs
 
 namespace Fin
 
