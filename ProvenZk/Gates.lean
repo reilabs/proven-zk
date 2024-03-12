@@ -27,16 +27,14 @@ def lookup (b0 b1 i0 i1 i2 i3 out : ZMod N): Prop :=
 -- In gnark 8 the number is decomposed in a binary vector with the length of the field order
 -- however this doesn't guarantee that the number is unique.
 def cmp_8 (a b out : ZMod N): Prop :=
-  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) % N = a.val) ∧
-  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) % N = b.val) ∧
+  ∃z w: Fin (binary_length N), z.val % N = a.val ∧ w.val % N = b.val ∧
   ((a = b ∧ out = 0) ∨
   (a.val < b.val ∧ out = -1) ∨
   (a.val > b.val ∧ out = 1))
 
 -- In gnark 9 the number is reduced to the smallest representation, ensuring it is unique.
 def cmp_9 (a b out : ZMod N): Prop :=
-  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) = a.val) ∧
-  ((recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) = b.val) ∧
+  ∃z w: Fin (binary_length N), z.val = a.val ∧ w.val = b.val ∧
   ((a = b ∧ out = 0) ∨
   (a.val < b.val ∧ out = -1) ∨
   (a.val > b.val ∧ out = 1))
@@ -46,13 +44,11 @@ def eq (a b : ZMod N): Prop := a = b
 def ne (a b : ZMod N): Prop := a ≠ b
 
 def le_8 (a b : ZMod N): Prop :=
-  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) % N = a.val ∧
-  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) % N = b.val ∧
+  ∃z w: Fin (binary_length N), z.val % N = a.val ∧ w.val % N = b.val ∧
   a.val <= b.val
 
 def le_9 (a b : ZMod N): Prop :=
-  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) a.val)) = a.val ∧
-  (recover_binary_nat (nat_to_bits_le_full_n (binary_length N) b.val)) = b.val ∧
+  ∃z w: Fin (binary_length N), z.val = a.val ∧ w.val = b.val ∧
   a.val <= b.val
 
 def to_binary (a : ZMod N) (d : Nat) (out : Vector (ZMod N) d): Prop :=
