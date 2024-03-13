@@ -43,10 +43,9 @@ def ne (a b : ZMod N): Prop := a ≠ b
 
 def le_8 (a b : ZMod N): Prop :=
   ∃z w: Fin (binary_length N), z.val % N = a.val ∧ w.val % N = b.val ∧
-  a.val <= b.val
+  z.val <= w.val
 
 def le_9 (a b : ZMod N): Prop :=
-  ∃z w: Fin (binary_length N), z.val = a.val ∧ w.val = b.val ∧
   a.val <= b.val
 
 def to_binary (a : ZMod N) (d : Nat) (out : Vector (ZMod N) d): Prop :=
