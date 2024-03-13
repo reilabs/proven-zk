@@ -115,6 +115,8 @@ protected theorem Nat.add_lt_add_of_le_of_lt {a b c d : Nat} (hle : a ≤ b) (hl
     a + c < b + d :=
   Nat.lt_of_le_of_lt (Nat.add_le_add_right hle _) (Nat.add_lt_add_left hlt _)
 
+def binary_length (n : Nat) : Nat := (Nat.log 2 n).succ
+
 namespace Fin
 
 def msb {d:ℕ} (v : Fin (2^d.succ)): Bool := v.val ≥ 2^d

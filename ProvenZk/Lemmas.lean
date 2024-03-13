@@ -26,17 +26,19 @@ theorem exists_eq_left₂ {pred : α → β → Prop}:
   simp [and_assoc]
 
 @[simp]
-theorem is_bool_is_bit (a : ZMod n) [Fact (Nat.Prime n)]: Gates.is_bool a = is_bit a := by rfl
+theorem is_bool_is_bit (a : ZMod n) [Fact (Nat.Prime n)]: GatesDef.is_bool a = is_bit a := by
+  simp [is_bit, GatesDef.is_bool, sub_eq_zero]
+  tauto
 
 @[simp]
-theorem Gates.eq_def : Gates.eq a b ↔ a = b := by simp [Gates.eq]
+theorem Gates.eq_def : GatesDef.eq a b ↔ a = b := by simp [GatesDef.eq]
 
 @[simp]
-theorem Gates.sub_def {N} {a b : ZMod N} : Gates.sub a b = a - b := by simp [Gates.sub]
+theorem Gates.sub_def {N} {a b : ZMod N} : GatesDef.sub a b = a - b := by simp [GatesDef.sub]
 
 @[simp]
-theorem Gates.is_zero_def {N} {a out : ZMod N} : Gates.is_zero a out ↔ out = Bool.toZMod (a = 0) := by
-  simp [Gates.is_zero]
+theorem Gates.is_zero_def {N} {a out : ZMod N} : GatesDef.is_zero a out ↔ out = Bool.toZMod (a = 0) := by
+  simp [GatesDef.is_zero]
   apply Iff.intro
   . rintro (_ | _) <;> simp [*]
   . rintro ⟨_⟩
@@ -44,77 +46,78 @@ theorem Gates.is_zero_def {N} {a out : ZMod N} : Gates.is_zero a out ↔ out = B
     tauto
 
 @[simp]
-theorem Gates.select_zero {a b r : ZMod N}: Gates.select 0 a b r = (r = b) := by
-  simp [Gates.select]
+theorem Gates.select_zero {a b r : ZMod N}: GatesDef.select 0 a b r = (r = b) := by
+  simp [GatesDef.select]
 
 @[simp]
-theorem Gates.select_one {a b r : ZMod N}: Gates.select 1 a b r = (r = a) := by
-  simp [Gates.select]
+theorem Gates.select_one {a b r : ZMod N}: GatesDef.select 1 a b r = (r = a) := by
+  simp [GatesDef.select]
 
 @[simp]
-theorem Gates.or_zero { a r : ZMod N}: Gates.or a 0 r = (is_bit a ∧ r = a) := by
-  simp [Gates.or]
+theorem Gates.or_zero { a r : ZMod N}: GatesDef.or a 0 r = (is_bit a ∧ r = a) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem Gates.zero_or { a r : ZMod N}: Gates.or 0 a r = (is_bit a ∧ r = a) := by
-  simp [Gates.or]
+theorem Gates.zero_or { a r : ZMod N}: GatesDef.or 0 a r = (is_bit a ∧ r = a) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem Gates.one_or { a r : ZMod N}: Gates.or 1 a r = (is_bit a ∧ r = 1) := by
-  simp [Gates.or]
+theorem Gates.one_or { a r : ZMod N}: GatesDef.or 1 a r = (is_bit a ∧ r = 1) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem Gates.or_one { a r : ZMod N}: Gates.or a 1 r = (is_bit a ∧ r = 1) := by
-  simp [Gates.or]
+theorem Gates.or_one { a r : ZMod N}: GatesDef.or a 1 r = (is_bit a ∧ r = 1) := by
+  simp [GatesDef.or]
 
 @[simp]
-theorem Gates.is_bit_one_sub {a : ZMod N}: is_bit (Gates.sub 1 a) ↔ is_bit a := by
-  simp [Gates.sub, is_bit, sub_eq_zero]
+theorem Gates.is_bit_one_sub {a : ZMod N}: is_bit (GatesDef.sub 1 a) ↔ is_bit a := by
+  simp [GatesDef.sub, is_bit, sub_eq_zero]
   tauto
 
 @[simp]
-theorem Gates.xor_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : Gates.xor a.toZMod b.toZMod c ↔ c = (a != b).toZMod := by
-  unfold xor
+theorem Gates.xor_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : GatesDef.xor a.toZMod b.toZMod c ↔ c = (a != b).toZMod := by
+  unfold GatesDef.xor
   cases a <;> cases b <;> {
-    simp [is_bool, Bool.toZMod, Bool.toNat, bne]
+    simp [GatesDef.is_bool, Bool.toZMod, Bool.toNat, bne]
     try ring_nf
   }
 
 @[simp]
-theorem Gates.and_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : Gates.and a.toZMod b.toZMod c ↔ c = (a && b).toZMod := by
-  unfold and
+theorem Gates.and_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : GatesDef.and a.toZMod b.toZMod c ↔ c = (a && b).toZMod := by
+  unfold GatesDef.and
   cases a <;> cases b <;> {
-    simp [is_bool, Bool.toZMod, Bool.toNat]
+    simp [GatesDef.is_bool, Bool.toZMod, Bool.toNat]
   }
 
 @[simp]
-theorem Gates.or_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : Gates.or a.toZMod b.toZMod c ↔ c = (a || b).toZMod := by
-  unfold or
+theorem Gates.or_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : GatesDef.or a.toZMod b.toZMod c ↔ c = (a || b).toZMod := by
+  unfold GatesDef.or
   cases a <;> cases b <;> {
-    simp [is_bool, Bool.toZMod, Bool.toNat]
+    simp [GatesDef.is_bool, Bool.toZMod, Bool.toNat]
   }
 
 @[simp]
 theorem Gates.not_bool {N} [Fact (N>1)] {a : Bool} : (1 : ZMod N) - a.toZMod = (!a).toZMod := by
-  cases a <;> simp [sub]
+  cases a <;> simp [GatesDef.sub]
 
 @[simp]
-lemma Gates.select_bool {N} [Fact (N > 1)] {c : Bool} {t f r : ZMod N}: Gates.select (c.toZMod (N:=N)) t f r ↔ r = if c then t else f := by
-  cases c <;> simp [select, is_bool]
+lemma Gates.select_bool {N} [Fact (N > 1)] {c : Bool} {t f r : ZMod N}: GatesDef.select (c.toZMod (N:=N)) t f r ↔ r = if c then t else f := by
+  cases c <;> simp [GatesDef.select, GatesDef.is_bool]
 
 @[simp]
-lemma Gates.eq_1_toZMod {N} [Fact (N>1)] {b : Bool}: Gates.eq (b.toZMod (N:=N)) 1 ↔ b := by
-  cases b <;> simp [eq, is_bool]
+lemma Gates.eq_1_toZMod {N} [Fact (N>1)] {b : Bool}: GatesDef.eq (b.toZMod (N:=N)) 1 ↔ b := by
+  cases b <;> simp [GatesDef.eq, GatesDef.is_bool]
 
 @[simp]
 lemma Gates.ite_0_toZMod {N} [Fact (N>1)] {b f: Bool}: (if b then (0:ZMod N) else f.toZMod (N:=N)) = (if b then false else f).toZMod := by
   cases b <;> simp
 
-theorem Gates.to_binary_rangecheck {a : ZMod N} {n out} (h: to_binary a n out): a.val < 2^n := by
+theorem Gates.to_binary_rangecheck {a : ZMod N} {n out} (h: GatesDef.to_binary a n out): a.val < 2^n := by
   rcases h with ⟨hrec, hbin⟩
   replace hbin := is_vector_binary_iff_exists_bool_vec.mp hbin
   rcases hbin with ⟨x, ⟨_⟩⟩
   rw [recover_binary_zmod'_map_toZMod_eq_Fin_ofBitsLE] at hrec
+
   cases Nat.lt_or_ge (2^n) N with
   | inl hp =>
     cases hrec
@@ -127,8 +130,8 @@ theorem Gates.to_binary_rangecheck {a : ZMod N} {n out} (h: to_binary a n out): 
     . simp [*]
 
 lemma Gates.to_binary_iff_eq_Fin_ofBitsLE {l : ℕ} {a : ZMod N} {v : Vector (ZMod N) l}:
-  Gates.to_binary a l v ↔ ∃v', v = v'.map Bool.toZMod ∧ a = (Fin.ofBitsLE v').val := by
-  unfold to_binary
+  GatesDef.to_binary a l v ↔ ∃v', v = v'.map Bool.toZMod ∧ a = (Fin.ofBitsLE v').val := by
+  unfold GatesDef.to_binary
   rw [is_vector_binary_iff_exists_bool_vec]
   apply Iff.intro
   . rintro ⟨⟨_⟩, ⟨x, ⟨_⟩⟩⟩
@@ -152,7 +155,7 @@ lemma map_toZMod_ofZMod_eq_self_of_is_vector_binary {n : ℕ} {v : Vector (ZMod 
     simp [*]
 
 lemma Gates.to_binary_iff_eq_fin_to_bits_le_of_pow_length_lt {l : ℕ} {a : ZMod N} {v : Vector (ZMod N) l} (pow_lt : 2 ^ l < N):
-  Gates.to_binary a l v ↔ ∃(ha : a.val < 2^l), v = (Fin.toBitsLE ⟨a.val, ha⟩).map Bool.toZMod := by
+  GatesDef.to_binary a l v ↔ ∃(ha : a.val < 2^l), v = (Fin.toBitsLE ⟨a.val, ha⟩).map Bool.toZMod := by
   apply Iff.intro
   . intro to_bin
     have := Gates.to_binary_rangecheck to_bin
@@ -171,5 +174,5 @@ lemma Gates.to_binary_iff_eq_fin_to_bits_le_of_pow_length_lt {l : ℕ} {a : ZMod
     simp [*]
 
 lemma Gates.from_binary_iff_eq_ofBitsLE_mod_order {l : ℕ} {a : Vector Bool l} {out : ZMod N}:
-  Gates.from_binary (a.map Bool.toZMod) out ↔ out = (Fin.ofBitsLE a).val := by
-  simp [from_binary, recover_binary_zmod'_map_toZMod_eq_Fin_ofBitsLE, eq_comm]
+  GatesDef.from_binary (a.map Bool.toZMod) out ↔ out = (Fin.ofBitsLE a).val := by
+  simp [GatesDef.from_binary, recover_binary_zmod'_map_toZMod_eq_Fin_ofBitsLE, eq_comm]
