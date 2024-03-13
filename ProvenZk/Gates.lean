@@ -6,15 +6,14 @@ open BigOperators
 
 namespace GatesDef
 variable {N : Nat}
--- variable [Fact (Nat.Prime N)]
 def is_bool (a : ZMod N): Prop := (1-a)*a = 0
 def add (a b : ZMod N): ZMod N := a + b
 def mul_acc (a b c : ZMod N): ZMod N := a + (b * c)
 def neg (a : ZMod N): ZMod N := a * (-1)
 def sub (a b : ZMod N): ZMod N := a - b
 def mul (a b : ZMod N): ZMod N := a * b
-def div_unchecked [Fact (Nat.Prime N)] (a b out : ZMod N): Prop := (b ≠ 0 ∧ out*b = a) ∨ (a = 0 ∧ b = 0 ∧ out = 0)
-def div [Fact (Nat.Prime N)] (a b out : ZMod N): Prop := b ≠ 0 ∧ out*b = a
+def div_unchecked (a b out : ZMod N): Prop := (b ≠ 0 ∧ out*b = a) ∨ (a = 0 ∧ b = 0 ∧ out = 0)
+def div (a b out : ZMod N): Prop := b ≠ 0 ∧ out*b = a
 def inv (a out : ZMod N): Prop := a ≠ 0 ∧ out*a = 1
 def xor (a b out : ZMod N): Prop := is_bool a ∧ is_bool b ∧ out = a+b-a*b-a*b
 def or (a b out : ZMod N): Prop := is_bool a ∧ is_bool b ∧ out = a+b-a*b
@@ -28,16 +27,15 @@ def lookup (b0 b1 i0 i1 i2 i3 out : ZMod N): Prop :=
 -- however this doesn't guarantee that the number is unique.
 def cmp_8 (a b out : ZMod N): Prop :=
   ∃z w: Fin (binary_length N), z.val % N = a.val ∧ w.val % N = b.val ∧
-  ((a = b ∧ out = 0) ∨
-  (a.val < b.val ∧ out = -1) ∨
-  (a.val > b.val ∧ out = 1))
+  ((z = w ∧ out = 0) ∨
+  (z.val < w.val ∧ out = -1) ∨
+  (z.val > w.val ∧ out = 1))
 
 -- In gnark 9 the number is reduced to the smallest representation, ensuring it is unique.
 def cmp_9 (a b out : ZMod N): Prop :=
-  ∃z w: Fin (binary_length N), z.val = a.val ∧ w.val = b.val ∧
-  ((a = b ∧ out = 0) ∨
+  (a = b ∧ out = 0) ∨
   (a.val < b.val ∧ out = -1) ∨
-  (a.val > b.val ∧ out = 1))
+  (a.val > b.val ∧ out = 1)
 
 def is_zero (a out: ZMod N): Prop := (a ≠ 0 ∧ out = 0) ∨ (a = 0 ∧ out = 1)
 def eq (a b : ZMod N): Prop := a = b
@@ -80,7 +78,7 @@ structure Gates_base (α : Type) : Type where
   to_binary : α → (n : Nat) → Vector α n → Prop
   from_binary : Vector α d → α → Prop
 
-def GatesGnark_8 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
+def GatesGnark8 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
   is_bool := GatesDef.is_bool,
   add := GatesDef.add,
   mul_acc := GatesDef.mul_acc,
@@ -104,8 +102,8 @@ def GatesGnark_8 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
   from_binary := GatesDef.from_binary
 }
 
-def GatesGnark_9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
-  GatesGnark_8 N with
+def GatesGnark9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
+  GatesGnark8 N with
     cmp := GatesDef.cmp_9
     le := GatesDef.le_9
 }
