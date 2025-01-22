@@ -1,8 +1,7 @@
+import Mathlib
+
 import ProvenZk.Gates
 import ProvenZk.Binary
-
-import Mathlib.Data.Vector.MapLemmas
-import Mathlib
 
 variable {N : Nat}
 variable [Fact (Nat.Prime N)]
@@ -11,10 +10,10 @@ instance : Fact (N > 1) := ⟨Nat.Prime.one_lt Fact.out⟩
 
 theorem ZMod.eq_of_veq {a b : ZMod N} (h : a.val = b.val) : a = b := by
   have : N ≠ 0 := by apply Nat.Prime.ne_zero Fact.out
-  have : ∃n, N = Nat.succ n := by exists N.pred; simp [Nat.succ_pred this]
+  have : ∃n, N = Nat.succ n := by exists N.pred; simp only [Nat.succ_pred this]
   rcases this with ⟨_, ⟨_⟩⟩
   simp [val] at h
-  exact Fin.eq_of_veq h
+  exact Fin.eq_of_val_eq h
 
 
 theorem ZMod.val_fin {n : ℕ} {i : ZMod (Nat.succ n)} : i.val = Fin.val i := by
@@ -43,7 +42,7 @@ theorem Gates.is_zero_def {N} {a out : ZMod N} : GatesDef.is_zero a out ↔ out 
   . rintro (_ | _) <;> simp [*]
   . rintro ⟨_⟩
     simp [Bool.toZMod, Bool.toNat]
-    tauto
+    by_cases a = 0 <;> simp_all
 
 @[simp]
 theorem Gates.select_zero {a b r : ZMod N}: GatesDef.select 0 a b r = (r = b) := by
@@ -122,21 +121,21 @@ theorem Gates.to_binary_rangecheck {a : ZMod N} {n out} (h: GatesDef.to_binary a
   | inl hp =>
     cases hrec
     have : (Fin.ofBitsLE x).val < N := Nat.lt_trans (Fin.is_lt _) hp
-    rw [ZMod.val_nat_cast, Nat.mod_eq_of_lt this]
+    rw [ZMod.val_natCast, Nat.mod_eq_of_lt this]
     exact Fin.is_lt _
   | inr hp =>
     apply Nat.lt_of_lt_of_le
     . apply ZMod.val_lt
     . simp [*]
 
-lemma Gates.to_binary_iff_eq_Fin_ofBitsLE {l : ℕ} {a : ZMod N} {v : Vector (ZMod N) l}:
+lemma Gates.to_binary_iff_eq_Fin_ofBitsLE {l : ℕ} {a : ZMod N} {v : List.Vector (ZMod N) l}:
   GatesDef.to_binary a l v ↔ ∃v', v = v'.map Bool.toZMod ∧ a = (Fin.ofBitsLE v').val := by
   unfold GatesDef.to_binary
   rw [is_vector_binary_iff_exists_bool_vec]
   apply Iff.intro
   . rintro ⟨⟨_⟩, ⟨x, ⟨_⟩⟩⟩
     exists x
-    cases x using Vector.casesOn
+    cases x using List.Vector.casesOn
     . simp [recover_binary_zmod']
     . rename_i xhd xtl
       simp [recover_binary_zmod', recover_binary_zmod'_map_toZMod_eq_Fin_ofBitsLE, Fin.ofBitsLE, Fin.ofBitsBE_snoc]
@@ -145,16 +144,16 @@ lemma Gates.to_binary_iff_eq_Fin_ofBitsLE {l : ℕ} {a : ZMod N} {v : Vector (ZM
     simp [recover_binary_zmod'_map_toZMod_eq_Fin_ofBitsLE]
 
 @[simp]
-lemma map_toZMod_ofZMod_eq_self_of_is_vector_binary {n : ℕ} {v : Vector (ZMod N) n} (h : is_vector_binary v) :
+lemma map_toZMod_ofZMod_eq_self_of_is_vector_binary {n : ℕ} {v : List.Vector (ZMod N) n} (h : is_vector_binary v) :
   v.map (fun x => Bool.toZMod (Bool.ofZMod x)) = v := by
   induction n with
-  | zero => simp [Vector.map]
+  | zero => cases v using List.Vector.casesOn; rfl
   | succ n ih =>
-    cases v using Vector.casesOn
+    cases v using List.Vector.casesOn
     simp only [is_vector_binary_cons] at h
     simp [*]
 
-lemma Gates.to_binary_iff_eq_fin_to_bits_le_of_pow_length_lt {l : ℕ} {a : ZMod N} {v : Vector (ZMod N) l} (pow_lt : 2 ^ l < N):
+lemma Gates.to_binary_iff_eq_fin_to_bits_le_of_pow_length_lt {l : ℕ} {a : ZMod N} {v : List.Vector (ZMod N) l} (pow_lt : 2 ^ l < N):
   GatesDef.to_binary a l v ↔ ∃(ha : a.val < 2^l), v = (Fin.toBitsLE ⟨a.val, ha⟩).map Bool.toZMod := by
   apply Iff.intro
   . intro to_bin
@@ -163,9 +162,9 @@ lemma Gates.to_binary_iff_eq_fin_to_bits_le_of_pow_length_lt {l : ℕ} {a : ZMod
     rw [Gates.to_binary_iff_eq_Fin_ofBitsLE] at to_bin
     rcases to_bin with ⟨v, ⟨_⟩, ⟨_⟩⟩
     have : Fin.mk (ZMod.val ((Fin.ofBitsLE v) : ZMod N)) this = Fin.ofBitsLE v := by
-      apply Fin.eq_of_veq
+      apply Fin.eq_of_val_eq
       simp
-      rw [ZMod.val_cast_of_lt]
+      apply Nat.mod_eq_of_lt
       apply Nat.lt_trans (Fin.is_lt _) pow_lt
     rw [this]
     simp [Fin.toBitsLE, Fin.ofBitsLE]
@@ -173,6 +172,6 @@ lemma Gates.to_binary_iff_eq_fin_to_bits_le_of_pow_length_lt {l : ℕ} {a : ZMod
     rw [Gates.to_binary_iff_eq_Fin_ofBitsLE]
     simp [*]
 
-lemma Gates.from_binary_iff_eq_ofBitsLE_mod_order {l : ℕ} {a : Vector Bool l} {out : ZMod N}:
+lemma Gates.from_binary_iff_eq_ofBitsLE_mod_order {l : ℕ} {a : List.Vector Bool l} {out : ZMod N}:
   GatesDef.from_binary (a.map Bool.toZMod) out ↔ out = (Fin.ofBitsLE a).val := by
   simp [GatesDef.from_binary, recover_binary_zmod'_map_toZMod_eq_Fin_ofBitsLE, eq_comm]

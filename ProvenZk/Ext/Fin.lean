@@ -1,7 +1,5 @@
-import Std.Data.Fin.Basic
-import Std.Classes.Cast
 import Mathlib.Data.Fin.Basic
-import Mathlib.Tactic.Linarith.Frontend
+import Mathlib.Tactic.Linarith
 
 namespace Fin
 
