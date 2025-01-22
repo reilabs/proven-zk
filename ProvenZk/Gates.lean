@@ -1,4 +1,4 @@
-import Mathlib.Data.ZMod.Basic
+import Mathlib.Data.ZMod.Defs
 
 import ProvenZk.Binary
 
@@ -48,9 +48,9 @@ def le_8 (a b : ZMod N): Prop :=
 def le_9 (a b : ZMod N): Prop :=
   a.val <= b.val
 
-def to_binary (a : ZMod N) (d : Nat) (out : Vector (ZMod N) d): Prop :=
+def to_binary (a : ZMod N) (d : Nat) (out : List.Vector (ZMod N) d): Prop :=
   @recover_binary_zmod' d N out = a ∧ is_vector_binary out
-def from_binary {d} (a : Vector (ZMod N) d) (out : ZMod N) : Prop :=
+def from_binary {d} (a : List.Vector (ZMod N) d) (out : ZMod N) : Prop :=
   @recover_binary_zmod' d N a = out ∧ is_vector_binary a
 end GatesDef
 
@@ -74,8 +74,8 @@ structure Gates_base (α : Type) : Type where
   eq : α → α → Prop
   ne : α → α → Prop
   le : α → α → Prop
-  to_binary : α → (n : Nat) → Vector α n → Prop
-  from_binary : Vector α d → α → Prop
+  to_binary : α → (n : Nat) → List.Vector α n → Prop
+  from_binary : List.Vector α d → α → Prop
 
 def GatesGnark8 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
   is_bool := GatesDef.is_bool,
