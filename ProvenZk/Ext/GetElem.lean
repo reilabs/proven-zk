@@ -15,7 +15,7 @@ theorem getElem_of_getElem! [GetElem cont idx elem domain] [(container: cont) �
 
 theorem getElem?_none_of_invalid_index [GetElem cont idx elem domain] [(container: cont) → (index: idx) → Decidable (domain container index)] (h : ¬ domain container index):
   container[index]? = none := by
-  simp [getElem!, decidableGetElem?, h]
+  simp [getElem?, getElem!, decidableGetElem?, h]
 
 theorem valid_index_of_getElem?_some [GetElem cont idx elem domain] [(container: cont) → (index: idx) → Decidable (domain container index)] (h : container[index]? = some element):
   domain container index := by
