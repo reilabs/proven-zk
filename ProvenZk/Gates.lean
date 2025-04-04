@@ -111,4 +111,5 @@ def GatesGnark9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
 }
 
 def GatesGnark12 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := { GatesGnark9 N with
-  to_binary := GatesDef.to_binary_12}
+  to_binary := GatesDef.to_binary_12
+}
