@@ -22,6 +22,9 @@ def select (b i1 i2 out : ZMod N): Prop := is_bool b ∧ out = i2 - b*(i2-i1)
 def lookup (b0 b1 i0 i1 i2 i3 out : ZMod N): Prop :=
   is_bool b0 ∧ is_bool b1 ∧
   out = (i2 - i0) * b1 + i0 + (((i3 - i2 - i1 + i0) * b1 + i1 - i0) * b0)
+def to_binary_12 (a : ZMod N) (d : Nat) (out : List.Vector (ZMod N) d): Prop :=
+  ∃(hp : a.val < 2^d), out = (Fin.toBitsLE ⟨a.val, hp⟩).map Bool.toZMod
+
 
 -- In gnark 8 the number is decomposed in a binary vector with the length of the field order
 -- however this doesn't guarantee that the number is unique.
@@ -105,4 +108,8 @@ def GatesGnark9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
   GatesGnark8 N with
     cmp := GatesDef.cmp_9
     le := GatesDef.le_9
+}
+
+def GatesGnark12 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := { GatesGnark9 N with
+  to_binary := GatesDef.to_binary_12
 }
