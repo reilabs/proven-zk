@@ -255,7 +255,7 @@ theorem map_singleton {a : α} {f : α → β} : Vector.map f (a ::ᵥ Vector.ni
   rfl
 
 @[simp]
-lemma getElem_snoc_at_length {vs : Vector α n}: (vs.snoc v)[n]'(by simp_arith) = v := by
+lemma getElem_snoc_at_length {vs : Vector α n}: (vs.snoc v)[n]'(by simp +arith +decide) = v := by
   induction n with
   | zero => cases vs using Vector.casesOn; rfl
   | succ n ih => cases vs using Vector.casesOn; simp [ih]

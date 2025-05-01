@@ -135,26 +135,26 @@ def lsbs {d:ℕ} (v : Fin (2^d.succ)): Fin (2^d) := ⟨v.val - (msb v).toNat * 2
     | inr ge =>
       apply Nat.sub_lt_left_of_lt_add
       . simp [msb, ge, Bool.toNat]
-      . have : 2^d + 2^d = 2^d.succ := by simp_arith [pow_succ, Nat.mul_comm]
+      . have : 2^d + 2^d = 2^d.succ := by simp +arith +decide [pow_succ, Nat.mul_comm]
         simp [msb, ge, Bool.toNat, v.prop, this]
 
 private lemma snoc_step_helper {d : ℕ} {b : Bool} {v : Fin (2^d)}:
   b.toNat + 2 * v.val < 2^d.succ := by
   have : b.toNat ≤ 1 := by cases b <;> simp
-  simp_arith
+  simp +arith +decide
   calc
-    b.toNat + 2 * v.val + 1 ≤ 2 * v.val + 2 := by cases b <;> { simp_arith }
-    _ = 2 * (v.val + 1) := by simp_arith
+    b.toNat + 2 * v.val + 1 ≤ 2 * v.val + 2 := by cases b <;> { simp +arith +decide }
+    _ = 2 * (v.val + 1) := by simp +arith +decide
     _ ≤ 2 * 2^d := by
       have := Fin.prop v
-      simp_arith [-Fin.is_lt] at this
-      simp_arith [this]
+      simp +arith +decide [-Fin.is_lt] at this
+      simp +arith +decide [this]
       linarith
     _ = 2^(d+1) := by simp [pow_succ, Nat.mul_comm]
 
 private lemma cons_step_helper {d : ℕ} {b : Bool} {v : Fin (2^d)}:
   b.toNat * 2^d + v.val < 2^d.succ := by
-  have : 2 ^ d.succ = 2^d + 2^d := by simp_arith [pow_succ, Nat.mul_comm]
+  have : 2 ^ d.succ = 2^d + 2^d := by simp +arith +decide [pow_succ, Nat.mul_comm]
   apply Nat.add_lt_add_of_le_of_lt
   . cases b <;> simp
   . apply Fin.is_lt
@@ -205,7 +205,7 @@ def ofBitsBE {d : ℕ} (v : List.Vector Bool d): Fin (2^d) := match d with
   | 0 => ⟨0, by decide⟩
   | d + 1 =>
     let proof := by
-      have : 2^d.succ = 2^d + 2^d := by simp_arith [pow_succ, Nat.mul_comm]
+      have : 2^d.succ = 2^d + 2^d := by simp +arith +decide [pow_succ, Nat.mul_comm]
       rw [this]
       apply Nat.add_lt_add_of_le_of_lt
       . cases v.head <;> simp
@@ -220,8 +220,8 @@ theorem ofBitsBE_snoc {d : ℕ} {v : Bool} {vs : List.Vector Bool d}:
     simp [ofBitsBE]
   | succ d ih =>
     unfold ofBitsBE
-    simp_arith [List.Vector.tail_snoc, List.Vector.head_snoc, ih, Nat.pow_succ]
-    cases vs.head <;> simp_arith [Bool.toNat]
+    simp +arith +decide [List.Vector.tail_snoc, List.Vector.head_snoc, ih, Nat.pow_succ]
+    cases vs.head <;> simp +arith +decide [Bool.toNat]
 
 def ofBitsLE {d : ℕ} (v : List.Vector Bool d): Fin (2^d) := ofBitsBE v.reverse
 
