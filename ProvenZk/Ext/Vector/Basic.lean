@@ -38,7 +38,8 @@ theorem head_snoc {T n} (v: Vector T (Nat.succ n)) (x: T): head (snoc v x) = hea
   cases v; rename_i val _;
   cases val
   . contradiction
-  . simp [snoc, head, append]
+  . simp only [head, snoc, Nat.succ_eq_add_one, Nat.reduceAdd, length_cons]
+    congr
 
 theorem map_reverse {α β n} (f : α -> β) (v : Vector α n) : (reverse v).map f = reverse (v.map f) := by
   apply Vector.eq
@@ -178,13 +179,12 @@ lemma get_snoc_fin_prev {vs : Vector α n} {v : α} {i : Fin n}:
   simp [get_val_getElem, getElem_def', Fin.castSucc_def]
 
 theorem ofFn_snoc' { fn : Fin (Nat.succ n) → α }:
-  Vector.ofFn fn = Vector.snoc (Vector.ofFn (fun (x : Fin n) => fn (Fin.castSucc x))) (fn n) := by
+  Vector.ofFn fn = Vector.snoc (Vector.ofFn (fun (x : Fin n) => fn (Fin.castSucc x))) (fn ⟨n, Nat.lt_succ_self n⟩) := by
   induction n with
   | zero => rfl
   | succ n ih =>
     conv => lhs; rw [Vector.ofFn, ih]
     simp [Vector.ofFn]
-    congr
 
 instance : Membership α (Vector α n) := ⟨fun xs x => x ∈ xs.toList⟩
 
