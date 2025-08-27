@@ -144,7 +144,7 @@ theorem proof_set_eq_proof { depth : Nat } {F: Type} {H : Hash F 2} {tree : Merk
   | succ depth ih =>
     cases ix using List.Vector.casesOn; rename_i hix _
     cases hix <;> {
-      simp [set, proof, treeFor, left, right, root, ih]
+      simp [set, proof, treeFor, left, right, ih]
     }
 
 @[simp]

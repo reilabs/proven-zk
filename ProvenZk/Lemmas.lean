@@ -97,7 +97,7 @@ theorem Gates.or_bool {N} [Fact (N>1)] {a b : Bool} {c : ZMod N} : GatesDef.or a
 
 @[simp]
 theorem Gates.not_bool {N} [Fact (N>1)] {a : Bool} : (1 : ZMod N) - a.toZMod = (!a).toZMod := by
-  cases a <;> simp [GatesDef.sub]
+  cases a <;> simp
 
 @[simp]
 lemma Gates.select_bool {N} [Fact (N > 1)] {c : Bool} {t f r : ZMod N}: GatesDef.select (c.toZMod (N:=N)) t f r ↔ r = if c then t else f := by
@@ -105,7 +105,7 @@ lemma Gates.select_bool {N} [Fact (N > 1)] {c : Bool} {t f r : ZMod N}: GatesDef
 
 @[simp]
 lemma Gates.eq_1_toZMod {N} [Fact (N>1)] {b : Bool}: GatesDef.eq (b.toZMod (N:=N)) 1 ↔ b := by
-  cases b <;> simp [GatesDef.eq, GatesDef.is_bool]
+  cases b <;> simp [GatesDef.eq]
 
 @[simp]
 lemma Gates.ite_0_toZMod {N} [Fact (N>1)] {b f: Bool}: (if b then (0:ZMod N) else f.toZMod (N:=N)) = (if b then false else f).toZMod := by

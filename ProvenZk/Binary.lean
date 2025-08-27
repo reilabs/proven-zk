@@ -140,7 +140,6 @@ def lsbs {d:ℕ} (v : Fin (2^d.succ)): Fin (2^d) := ⟨v.val - (msb v).toNat * 2
 
 private lemma snoc_step_helper {d : ℕ} {b : Bool} {v : Fin (2^d)}:
   b.toNat + 2 * v.val < 2^d.succ := by
-  have : b.toNat ≤ 1 := by cases b <;> simp
   simp +arith +decide
   calc
     b.toNat + 2 * v.val + 1 ≤ 2 * v.val + 2 := by cases b <;> { simp +arith +decide }
@@ -148,7 +147,7 @@ private lemma snoc_step_helper {d : ℕ} {b : Bool} {v : Fin (2^d)}:
     _ ≤ 2 * 2^d := by
       have := Fin.prop v
       simp +arith +decide [-Fin.is_lt] at this
-      simp +arith +decide [this]
+      simp +arith +decide
       linarith
     _ = 2^(d+1) := by simp [pow_succ, Nat.mul_comm]
 
@@ -172,7 +171,7 @@ theorem msb_lsbs_decomposition_unique {d}  {v : Fin (2^d.succ)} {msb' : Bool} {l
         simp [msb, Bool.toNat]
       }
     . cases msb' <;> {
-      have : ¬ 2^d ≤ lsbs'.val := not_le_of_lt (Fin.is_lt lsbs')
+      have : ¬ 2^d ≤ lsbs'.val := not_le_of_gt (Fin.is_lt lsbs')
       simp [lsbs, Bool.toNat, msb, this]
     }
   . rintro ⟨⟨_⟩, ⟨_⟩⟩
@@ -233,10 +232,10 @@ lemma lsbs_ofBitsBE_eq_ofBitsBE_tail {d : ℕ} {v : List.Vector Bool d.succ}:
     cases v using List.Vector.casesOn
     rename_i hd _
     cases hd <;> rfl
-  | succ d ih =>
+  | succ d _ =>
     cases v using List.Vector.casesOn with | cons hd tl =>
     rw [ofBitsBE]
-    simp [ih]
+    simp
 
 @[simp]
 lemma msb_ofBitsBE_eq_head {d : ℕ} {v : List.Vector Bool d.succ}:
