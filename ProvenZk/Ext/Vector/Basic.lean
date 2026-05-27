@@ -15,24 +15,14 @@ theorem set_cons_0 {α n} (v : Vector α n) (x y: α):
   simp
 
 @[simp]
-theorem toList_tail {α n} (v: Vector α (Nat.succ n)) : v.tail.toList = v.toList.tail := by
-  rw [←cons_head_tail v]
-  rw [toList_cons]
-  simp
-
-@[simp]
 theorem toList_snoc {α n} (v: Vector α n) (x: α) : (snoc v x).toList = v.toList ++ [x] := by
   cases v
   unfold snoc
   simp
 
 theorem tail_snoc {T n} (v: Vector T (Nat.succ n)) (x: T): tail (snoc v x) = snoc (tail v) x := by
-  cases v; rename_i v _;
-  apply Vector.eq
-  simp [toList_snoc, toList_tail]
-  cases v
-  . contradiction
-  . simp
+  cases v using Vector.casesOn
+  rfl
 
 theorem head_snoc {T n} (v: Vector T (Nat.succ n)) (x: T): head (snoc v x) = head v := by
   cases v; rename_i val _;
@@ -165,7 +155,7 @@ lemma snoc_get_castSucc {vs : Vector α n}: (vs.snoc v).get (Fin.castSucc i) = v
     cases vs using Vector.casesOn with | cons hd tl =>
     cases i using Fin.cases with
     | zero => simp
-    | succ i => simp [Fin.castSucc_succ_eq_succ_castSucc, ih]
+    | succ i => simp [ih]
 
 theorem get_val_getElem {v : Vector α n} {i : Fin n}: v[i.val]'(i.prop) = v.get i := by
   rfl
@@ -176,7 +166,7 @@ theorem getElem_def' {v : Vector α n} {i : Nat} {prop}: v[i]'prop = v.get ⟨i,
 @[simp]
 lemma get_snoc_fin_prev {vs : Vector α n} {v : α} {i : Fin n}:
   (vs.snoc v)[i.val]'(by (have := i.prop); linarith) = vs[i.val]'(i.prop) := by
-  simp [get_val_getElem, getElem_def', Fin.castSucc_def]
+  simp [getElem_def', Fin.castSucc_def]
 
 theorem ofFn_snoc' { fn : Fin (Nat.succ n) → α }:
   Vector.ofFn fn = Vector.snoc (Vector.ofFn (fun (x : Fin n) => fn (Fin.castSucc x))) (fn ⟨n, Nat.lt_succ_self n⟩) := by
@@ -204,7 +194,6 @@ theorem map_id': Vector.map (fun x => x) v = v := by
   rw [this, Vector.map_id]
 
 def ofFnGet (v : Vector F d) : Vector F d := Vector.ofFn fun i => v[i.val]'i.prop
-instance : HAppend (Vector α d₁) (Vector α d₂) (Vector α (d₁ + d₂)) := ⟨Vector.append⟩
 
 @[simp]
 theorem ofFnGet_id : ofFnGet v = v := by simp [ofFnGet, GetElem.getElem]
