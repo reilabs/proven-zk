@@ -26,7 +26,7 @@ def to_binary_12 (a : ZMod N) (d : Nat) (out : List.Vector (ZMod N) d): Prop :=
   ∃(hp : a.val < 2^d), out = (Fin.toBitsLE ⟨a.val, hp⟩).map Bool.toZMod
 
 
--- In gnark 8 the number is decomposed in a binary vector with the length of the field order
+-- In gnark 8 the number is decomposed into a binary vector with the length of the field order
 -- however this doesn't guarantee that the number is unique.
 def cmp_8 (a b out : ZMod N): Prop :=
   ∃z w: Fin (binary_length N), z.val % N = a.val ∧ w.val % N = b.val ∧
@@ -113,3 +113,4 @@ def GatesGnark9 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := {
 def GatesGnark12 (N : Nat) [Fact (Nat.Prime N)] : Gates_base (ZMod N) := { GatesGnark9 N with
   to_binary := GatesDef.to_binary_12
 }
+

@@ -55,7 +55,7 @@ type from [Mathlib 4](https://leanprover-community.github.io/mathlib4_docs/).
 For available operations please see the definitions in
 [`Gates.lean`](./ProvenZk/Gates.lean).
 
-The other main components of the library contain of multiple theorems to assist
+The other main components of the library contain multiple theorems to assist
 with the formal verification of circuits. These are as follows:
 
 - `import ProvenZK.Binary`: The definition of the `Bits` type, as well as

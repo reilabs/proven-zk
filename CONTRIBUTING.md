@@ -18,7 +18,7 @@ with the major components as follows:
   dependencies.
 - [`ProvenZK.lean`](./ProvenZk.lean): The entry point for the library itself.
 - [`ProvenZK`](./ProvenZk): The components of the library. The main interface to
-  the library lives in this folder, and supporting functionality in subfolders
+  the library lives in this folder, and supporting functionality lives in subfolders
   of this folder.
 
 For a more detailed overview of the components provided by this repository,
