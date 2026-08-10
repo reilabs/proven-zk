@@ -1,5 +1,3 @@
-import Mathlib
-
 theorem getElem?_eq_some_getElem_of_valid_index [GetElem cont idx elem domain] [(container: cont) → (index: idx) → Decidable (domain container index)] (h : domain container index):
   container[index]? = some container[index] := by
   simp [getElem?, *]
