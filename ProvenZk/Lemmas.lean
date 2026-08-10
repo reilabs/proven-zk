@@ -1,4 +1,4 @@
-import Mathlib
+import Mathlib.Algebra.Field.ZMod
 
 import ProvenZk.Gates
 import ProvenZk.Binary
